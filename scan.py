@@ -44,8 +44,48 @@ def create_databases(filespec: str) -> None:
 
     with sqlite3.connect(filespec) as db:
 
-        db_trial_def = """CREATE TABLE trial (
-        test TEXT NOT NULL
+        db_trial_def = """CREATE TABLE trial1(
+        eudract TEXT NOT NULL,
+        status TEXT NOT NULL,
+        db_date TEXT NOT NULL,
+        title TEXT NOT NULL,
+        nct TEXT NOT NULL,
+        placebo BOOLEAN NOT NULL,
+        condition TEXT NOT NULL,
+        meddra_version REAL NULL,
+        meddra_level TEXT NOT NULL,
+        meddra_classification, INTEGER NOT NULL,
+        meddra_term TEXT NOT NULL,
+        meddra_soc INTEGER NOT NULL,
+        rare INTEGER NOT NULL,
+        fih INTEGER NOT NULL,
+        bioequivalence INTEGER NOT NULL,
+        phase1 INTEGER NOT NULL,
+        phase2 INTEGER NOT NULL,
+        phase3 INTEGER NOT NULL,
+        phase4 INTEGER NOT NULL,
+        diagnosis INTEGER NOT NULL,
+        prophylaxis INTEGER NOT NULL,
+        therapy INTEGER NOT NULL,
+        safety INTEGER NOT NULL,
+        efficacy INTEGER NOT NULL,
+        pk INTEGER NOT NULL,
+        pd INTEGER NOT NULL,
+        randomised INTEGER NOT NULL,
+        open_design INTEGER NOT NULL,
+        single_blind INTEGER NOT NULL,
+        double_blind INTEGER NOT NULL,
+        crossover INTEGER NOT NULL,
+        age_in_utero INTEGER NOT NULL,
+        age_under2 INTEGER NOT NULL,
+        age_2to11 INTEGER NOT NULL,
+        age_18to64 INTEGER NOT NULL,
+        age_65plus INTEGER NOT NULL,
+        female INTEGER NOT NULL,
+        male INTEGER NOT NULL,
+        network TEXT NOT NULL,
+        eot_status TEXT NOT NULL,
+        eot_date TEXT NOT NULL
         )
         """
 
@@ -374,11 +414,11 @@ trial_title_re = re.compile("^A.3 Full title of the trial: (.*$)")
 trial_NCT_re = re.compile(r"^A.5.2 US NCT \(ClinicalTrials.gov registry\) number: NCT(\d+)")
 trial_placebo_re = re.compile(r"D.8.1 Is a Placebo used in this Trial\? (.*$)")
 trial_condition_re = re.compile(r"^E.1.1 Medical condition\(s\) being investigated: (.*$)")
-trial_MedDRA_version_re = re.compile("^E.1.2 Version: (.*$)")
+trial_MedDRA_version_re = re.compile("^E.1.2 Version: ([0-9.]+)")
 trial_MedDRA_level_re = re.compile("^E.1.2 Level: (.*$)")
-trial_MedDRA_classification_re = re.compile("^E.1.2 Classification code: (.*$)")
+trial_MedDRA_classification_re = re.compile(r"^E.1.2 Classification code: (\d+)")
 trial_MedDRA_term_re = re.compile("^E.1.2 Term: (.*$)")
-trial_MedDRA_SOC_re = re.compile("^E.1.2 System Organ Class: (.*$)")
+trial_MedDRA_SOC_re = re.compile(r"^E.1.2 System Organ Class: (\d+)")
 trial_rare_re = re.compile("^E.1.3 Condition being studied is a rare disease: (.*$)")
 trial_fih_re = re.compile("^E.7.1.1 First administration to humans: (.*$)")
 trial_bioequivalence_re = re.compile("^E.7.1.2 Bioequivalence study: (.*$)")
