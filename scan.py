@@ -103,6 +103,7 @@ def create_databases(filespec: str) -> None:
         """
 
         db_sponsor_def = """CREATE TABLE sponsor(
+        eudract TEXT NOT NULL,
         name TEXT NOT NULL,
         org TEXT NOT NULL,
         contact TEXT NOT NULL,
@@ -198,7 +199,7 @@ def update_drug(db, list_of_drugs):
                                    cas,
                                    sponsor_code,
                                    ev_substance,
-                                   alt_name))
+                                   alt_name)) # This is intentional, want alt listed last in db
 
 
 def update_sponsor(db):
@@ -206,13 +207,14 @@ def update_sponsor(db):
     Write the sponsor-related data for a given trial to the database.
     :return:
     """
-    print("Updating sponsor table")  # TODO comment out debug statement
+    add_sponsor_stmt = """INSERT INTO sponsor(eudract, name, org, contact, email) 
+                        VALUES(?,?,?,?,?)"""
     for (sponsor_name, sponsor_org, sponsor_contact, sponsor_email) in sponsor_set:
-        print("Sponsor: {}".format(sponsor_name))
-        print("Sponsor Org: {}".format(sponsor_org))
-        print("Sponsor Contact: {}".format(sponsor_contact))
-        print("Sponsor Email: {}".format(sponsor_email))
-
+        db.execute(add_sponsor_stmt, (trial[0][2],
+                                      sponsor_name,
+                                      sponsor_org,
+                                      sponsor_contact,
+                                      sponsor_email))
 
 def update_location(db):
     """
