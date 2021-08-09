@@ -1,0 +1,7 @@
+For paginated results with search defined by query string:
+
+https://www.clinicaltrialsregister.eu/ctr-search/rest/download/full?query=folfirinox&page=2&mode=current_page
+
+For trials specified by EudraCT Number:
+
+https://www.clinicaltrialsregister.eu/ctr-search/rest/download/summary?mode=selected&eudracts=2012-004988-42
