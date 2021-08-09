@@ -71,7 +71,8 @@ def create_databases(filespec: str) -> None:
         """
 
         db_location_def = """CREATE TABLE location(
-        test TEXT NOT NULL
+        eudract TEXT NOT NULL,
+        location TEXT NOT NULL
         )
         """
 
