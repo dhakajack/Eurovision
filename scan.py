@@ -43,8 +43,7 @@ def create_databases(filespec: str) -> None:
     print("Creating databases")  # TODO comment out debug statement
 
     with sqlite3.connect(filespec) as db:
-
-        db_trial_def = """CREATE TABLE trial1(
+        db_trial_def = """CREATE TABLE trial(
         eudract TEXT NOT NULL,
         status TEXT NOT NULL,
         db_date TEXT NOT NULL,
@@ -52,7 +51,7 @@ def create_databases(filespec: str) -> None:
         nct TEXT NOT NULL,
         placebo BOOLEAN NOT NULL,
         condition TEXT NOT NULL,
-        meddra_version REAL NULL,
+        meddra_version TEXT NULL,
         meddra_level TEXT NOT NULL,
         meddra_classification, INTEGER NOT NULL,
         meddra_term TEXT NOT NULL,
@@ -124,16 +123,115 @@ def create_databases(filespec: str) -> None:
     db.close()
 
 
+def y_n_to_int(answer: str) -> int:
+    if answer.casefold() == "yes":
+        return 1
+    else:
+        return 0
+
+
 def update_trial(db):
     """
     Write the core parameters for a given trial (defined by unique
     Eudract number) to database.
     :return:
     """
-    print(banner())
-    print("Updating trial table")  # TODO comment out debug statement
-    for (field_name, regexp, field_value) in trial:
-        print("{} = {}".format(field_name, field_value))
+    print("Updating trial {}".format(trial[0][2]))
+    pass
+    # add_trial_stmt = """INSERT INTO trial(
+    #                     eudract,
+    #                     sponsor_code
+    #                     status,
+    #                     db_date,
+    #                     title,
+    #                     nct,
+    #                     placebo,
+    #                     condition,
+    #                     meddra_version,
+    #                     meddra_level,
+    #                     meddra_classification,
+    #                     meddra_term,
+    #                     meddra_soc,
+    #                     rare,
+    #                     fih,
+    #                     bioequivalence,
+    #                     phase1,
+    #                     phase2,
+    #                     phase3,
+    #                     phase4,
+    #                     diagnosis,
+    #                     prophylaxis,
+    #                     therapy,
+    #                     safety,
+    #                     efficacy,
+    #                     pk,
+    #                     pd,
+    #                     randomised,
+    #                     open_design,
+    #                     single_blind,
+    #                     double_blind,
+    #                     crossover,
+    #                     age_in_utero,
+    #                     age_preterm,
+    #                     age_newborn,
+    #                     age_under2,
+    #                     age_2to11,
+    #                     age_12to17,
+    #                     age_18to64,
+    #                     age_65plus,
+    #                     female,
+    #                     male,
+    #                     network,
+    #                     eot_status,
+    #                     eot_date)
+    #                     VALUES({})"""
+    # db.execute(add_trial_stmt.format(",".join("?"*45)),
+    #            trial[0][2],                 # eudract
+    #            trial[1][2],                 # sponsor
+    #            trial[2][2],                 # status
+    #            trial[3][2],                 # db_date
+    #            trial[4][2],                 # title
+    #            "NCT" + trial[5][2],         # nct
+    #            y_n_to_int(trial[6][2]),     # placebo
+    #            trial[7][2],                 # condition
+    #            trial[8][2],                 # meddra_version
+    #            trial[9][2],                 # meddra_level
+    #            int(trial[10][2]),           # meddra_classification
+    #            trial[11][2],                # meddra_term
+    #            int(trial[12][2]),           # meddra_soc
+    #            y_n_to_int(trial[13][2]),    # rare
+    #            y_n_to_int(trial[14][2]),    # fih
+    #            y_n_to_int(trial[15][2]),    # bioequivalence
+    #            y_n_to_int(trial[16][2]),    # phase1
+    #            y_n_to_int(trial[17][2]),    # phase2
+    #            y_n_to_int(trial[18][2]),    # phase3
+    #            y_n_to_int(trial[19][2]),    # phase4
+    #            y_n_to_int(trial[20][2]),    # diagnosis
+    #            y_n_to_int(trial[21][2]),    # prophylaxis
+    #            y_n_to_int(trial[22][2]),    # therapy
+    #            y_n_to_int(trial[23][2]),    # safety
+    #            y_n_to_int(trial[24][2]),    # efficacy
+    #            y_n_to_int(trial[25][2]),    # pk
+    #            y_n_to_int(trial[26][2]),    # pd
+    #            y_n_to_int(trial[27][2]),    # randomised
+    #            y_n_to_int(trial[28][2]),    # open_design
+    #            y_n_to_int(trial[29][2]),    # single_blind
+    #            y_n_to_int(trial[30][2]),    # double_blind
+    #            y_n_to_int(trial[31][2]),    # crossover
+    #            y_n_to_int(trial[32][2]),    # age_in_utero
+    #            y_n_to_int(trial[33][2]),    # age_preterm
+    #            y_n_to_int(trial[34][2]),    # age_newborn
+    #            y_n_to_int(trial[35][2]),    # age_under2
+    #            y_n_to_int(trial[36][2]),    # age_2to11
+    #            y_n_to_int(trial[37][2]),    # age_12to17
+    #            y_n_to_int(trial[38][2]),    # age_18to64
+    #            y_n_to_int(trial[39][2]),    # age_65plus
+    #            y_n_to_int(trial[40][2]),    # female
+    #            y_n_to_int(trial[41][2]),    # male
+    #            trial[42][2],                # network
+    #            trial[43][2],                # eot_status
+    #            trial[44][2]                 # eot_date
+    #            )
 
 
 def drug_fields_match(okptr: str, currptr: str) -> bool:
@@ -199,7 +297,7 @@ def update_drug(db, list_of_drugs):
                                    cas,
                                    sponsor_code,
                                    ev_substance,
-                                   alt_name)) # This is intentional, want alt listed last in db
+                                   alt_name))  # This is intentional, want alt listed last in db
 
 
 def update_sponsor(db):
@@ -216,14 +314,17 @@ def update_sponsor(db):
                                       sponsor_contact,
                                       sponsor_email))
 
+
 def update_location(db):
     """
     Write the location-related data about a trial to the database.
     :return:
     """
-    print("Updating location table")
-    for i in location_set:
-        print("Location: {}".format(i))
+    add_location_stmt = """INSERT INTO location(eudract, location)
+                            VALUES(?,?)"""
+    for where in sorted(location_set):
+        db.execute(add_location_stmt, (trial[0][2],
+                                       where))
 
 
 def add_drug_to_list():
