@@ -332,6 +332,7 @@ def add_drug_to_list():
     Add a drug to the list of drug information, even if it duplicates some information.
     :return:
     """
+    # if there is something in any of the fields, add that entry to the drug list
     drug_list.append([drug[0][2].casefold(),    # Trade
                       drug[1][2].casefold(),    # Product
                       drug[2][2].casefold(),    # Code
@@ -354,6 +355,19 @@ def add_sponsor_to_set():
                      sponsor[3][2].casefold()))             # email
 
 
+def empty_list(query_list: list) -> bool:
+    """
+    Determine if a list (e.g., drug) has no data. Sometimes trials have no drug at all listed,
+    in other cases, the IMP section may have an entry without an drug-identifing infomration.
+    :param query_list:
+    :return: True if the list has no data in its third element.
+    """
+    for i in range(len(query_list)):
+        if query_list[i][2] != "":
+            return False
+    return True
+
+
 def update_databases(filespec):
     """
     Calls subroutines to write data to each table of database.
@@ -361,7 +375,8 @@ def update_databases(filespec):
     """
     # Add uncommitted items to their respective lists
     with sqlite3.connect(filespec) as conn:
-        add_drug_to_list()
+        if not empty_list(drug):
+            add_drug_to_list()
         add_sponsor_to_set()
         # Update each database table
         update_trial(conn)
@@ -391,7 +406,7 @@ def list_match(current_line: str, test_list: list) -> str:
         return ""
 
 
-def table_match(current_line: str, test_table: list) -> bool:
+def table_match(current_line: str, test_table: list, idx: int) -> bool:
     """
     Reads a line from the trial listing and tries to match it against
     regular expressions that define trial elements that are unique to each trial.
@@ -401,9 +416,10 @@ def table_match(current_line: str, test_table: list) -> bool:
         - 0: database header term (str)
         - 1: compiled regular expression (regexp object)
         - 2: value (str)
+    :param idx: starting from what index in the table?
     :return:
     """
-    for i in range(1, len(test_table)):
+    for i in range(idx, len(test_table)):
         # If a element has already been defined, i.e., in an earlier pass through another
         # member-state version of the same trial, skip this. Don't overwrite the non-blank
         # values from the first trial listed
@@ -415,39 +431,15 @@ def table_match(current_line: str, test_table: list) -> bool:
     return False
 
 
-def drug_match(current_line: str, line_count: int) -> bool:
-    for i in range(len(drug)):
-        current_term = list_match(current_line, drug[i])
-        if current_term:
-            if line_count < 20:
-                drug[i][FIELD_VAL] = current_term
-            else:
-                if drug[0][FIELD_VAL] != "" \
-                  or drug[1][FIELD_VAL] != "" \
-                  or drug[2][FIELD_VAL] != "" \
-                  or drug[3][FIELD_VAL] != "" \
-                  or drug[4][FIELD_VAL] != "" \
-                  or drug[5][FIELD_VAL] != "" \
-                  or drug[6][FIELD_VAL] != "" \
-                  or drug[7][FIELD_VAL] != "":
-                    add_drug_to_list()
-                    wipe_list(drug, 0)
-                drug[i][FIELD_VAL] = current_term
-            return True
-    return False
-
-
 def banner(banchar="*", width=80) -> str:
     """ Print a line of some character to break up output"""
     return banchar * width
 
 
 def parse_listing(infile: str, outfile: str):
-    line_scan_count = 100  # just some arbitrary number > 20 to set up first drug read
     with open(infile, "r") as eu_trials:
         line = eu_trials.readline()
         while line:
-            line_scan_count += 1
             # For each line, try to match all elements to be captured.
             # Begin with the Eudract number, which signals start of a new trial listing
             tested_term = list_match(line, trial[0])  # Trial Eudract number
@@ -463,8 +455,11 @@ def parse_listing(infile: str, outfile: str):
                     wipe_all()
                 line = eu_trials.readline()
                 continue
-            if drug_match(line, line_scan_count):
-                line_scan_count = 0
+            tested_term = imp_no_re.match(" ".join(line.split()))
+            if tested_term:
+                if not empty_list(drug):
+                    add_drug_to_list()
+                    wipe_list(drug, 0)
                 line = eu_trials.readline()
                 continue
             tested_term = list_match(line, sponsor[0])  # sponsor
@@ -495,8 +490,8 @@ def parse_listing(infile: str, outfile: str):
                     tested_term = location_list_end_re.match(line)
                 line = eu_trials.readline()
                 continue
-            # Finally, check for any items that should occur once per trial
-            if table_match(line, trial) or table_match(line, sponsor):
+            # Finally, fill these tables
+            if table_match(line, trial, 1) or table_match(line, drug, 0) or table_match(line, sponsor, 1):
                 line = eu_trials.readline()
                 continue
             # Future expansion: add any new elements here
@@ -556,6 +551,7 @@ trial_end_of_trial_status_re = re.compile("^P. End of Trial Status: (.*$)")
 trial_end_of_trial_date_re = re.compile("^P. Date of the global end of the trial: (.*$)")
 
 # Compile regexps related to trial IMP(s)
+imp_no_re = re.compile(r"D.IMP: \d+")  # do not capture - IMP numbering varies between MS records
 imp_trade_name_re = re.compile("^D.2.1.1.1 Trade name: (.*$)")
 imp_name_re = re.compile("^D.3.1 Product name: (.*$)")
 imp_code_re = re.compile("^D.3.2 Product code: (.*$)")
