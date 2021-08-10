@@ -40,53 +40,54 @@ def create_databases(filespec: str) -> None:
     Create the relational databases underlying the registry.
     :return: None
     """
-    print("Creating databases")  # TODO comment out debug statement
+    print("Creating databases")
 
     with sqlite3.connect(filespec) as db:
         db_trial_def = """CREATE TABLE trial(
         eudract TEXT NOT NULL,
+        sponsor_code TEXT NOT NULL,
         status TEXT NOT NULL,
         db_date TEXT NOT NULL,
         title TEXT NOT NULL,
         nct TEXT NOT NULL,
         placebo BOOLEAN NOT NULL,
-        condition TEXT NOT NULL,
-        meddra_version TEXT NULL,
-        meddra_level TEXT NOT NULL,
-        meddra_classification, INTEGER NOT NULL,
-        meddra_term TEXT NOT NULL,
-        meddra_soc INTEGER NOT NULL,
-        rare INTEGER NOT NULL,
-        fih INTEGER NOT NULL,
-        bioequivalence INTEGER NOT NULL,
-        phase1 INTEGER NOT NULL,
-        phase2 INTEGER NOT NULL,
-        phase3 INTEGER NOT NULL,
-        phase4 INTEGER NOT NULL,
-        diagnosis INTEGER NOT NULL,
-        prophylaxis INTEGER NOT NULL,
-        therapy INTEGER NOT NULL,
-        safety INTEGER NOT NULL,
-        efficacy INTEGER NOT NULL,
-        pk INTEGER NOT NULL,
-        pd INTEGER NOT NULL,
-        randomised INTEGER NOT NULL,
-        open_design INTEGER NOT NULL,
-        single_blind INTEGER NOT NULL,
-        double_blind INTEGER NOT NULL,
-        crossover INTEGER NOT NULL,
-        age_in_utero INTEGER NOT NULL,
-        age_under2 INTEGER NOT NULL,
-        age_2to11 INTEGER NOT NULL,
-        age_18to64 INTEGER NOT NULL,
-        age_65plus INTEGER NOT NULL,
-        female INTEGER NOT NULL,
-        male INTEGER NOT NULL,
-        network TEXT NOT NULL,
-        eot_status TEXT NOT NULL,
-        eot_date TEXT NOT NULL
-        )
-        """
+        condition TEXT NOT NULL)"""
+        # meddra_version TEXT NULL,
+        # meddra_level TEXT NOT NULL,
+        # meddra_classification, INTEGER NOT NULL,
+        # meddra_term TEXT NOT NULL,
+        # meddra_soc INTEGER NOT NULL,
+        # rare INTEGER NOT NULL,
+        # fih INTEGER NOT NULL,
+        # bioequivalence INTEGER NOT NULL,
+        # phase1 INTEGER NOT NULL,
+        # phase2 INTEGER NOT NULL,
+        # phase3 INTEGER NOT NULL,
+        # phase4 INTEGER NOT NULL,
+        # diagnosis INTEGER NOT NULL,
+        # prophylaxis INTEGER NOT NULL,
+        # therapy INTEGER NOT NULL,
+        # safety INTEGER NOT NULL,
+        # efficacy INTEGER NOT NULL,
+        # pk INTEGER NOT NULL,
+        # pd INTEGER NOT NULL,
+        # randomised INTEGER NOT NULL,
+        # open_design INTEGER NOT NULL,
+        # single_blind INTEGER NOT NULL,
+        # double_blind INTEGER NOT NULL,
+        # crossover INTEGER NOT NULL,
+        # age_in_utero INTEGER NOT NULL,
+        # age_under2 INTEGER NOT NULL,
+        # age_2to11 INTEGER NOT NULL,
+        # age_18to64 INTEGER NOT NULL,
+        # age_65plus INTEGER NOT NULL,
+        # female INTEGER NOT NULL,
+        # male INTEGER NOT NULL,
+        # network TEXT NOT NULL,
+        # eot_status TEXT NOT NULL,
+        # eot_date TEXT NOT NULL
+        # )
+        # """
 
         db_drug_def = """CREATE TABLE drug(
         eudract TEXT NOT NULL,
@@ -137,16 +138,15 @@ def update_trial(db):
     :return:
     """
     print("Updating trial {}".format(trial[0][2]))
-    pass
-    # add_trial_stmt = """INSERT INTO trial(
-    #                     eudract,
-    #                     sponsor_code
-    #                     status,
-    #                     db_date,
-    #                     title,
-    #                     nct,
-    #                     placebo,
-    #                     condition,
+    add_trial_stmt = """INSERT INTO trial(
+                        eudract,
+                        sponsor_code,
+                        status,
+                        db_date,
+                        title,
+                        nct,
+                        placebo,
+                        condition) VALUES({})"""
     #                     meddra_version,
     #                     meddra_level,
     #                     meddra_classification,
@@ -185,15 +185,15 @@ def update_trial(db):
     #                     eot_status,
     #                     eot_date)
     #                     VALUES({})"""
-    # db.execute(add_trial_stmt.format(",".join("?"*45)),
-    #            trial[0][2],                 # eudract
-    #            trial[1][2],                 # sponsor
-    #            trial[2][2],                 # status
-    #            trial[3][2],                 # db_date
-    #            trial[4][2],                 # title
-    #            "NCT" + trial[5][2],         # nct
-    #            y_n_to_int(trial[6][2]),     # placebo
-    #            trial[7][2],                 # condition
+    db.execute(add_trial_stmt.format(",".join("?"*8)), (
+               trial[0][2],                 # eudract
+               trial[1][2],                 # sponsor
+               trial[2][2],                 # status
+               trial[3][2],                 # db_date
+               trial[4][2],                 # title
+               trial[5][2],                 # nct
+               trial[6][2],                # placebo
+               trial[7][2]))               # condition
     #            trial[8][2],                 # meddra_version
     #            trial[9][2],                 # meddra_level
     #            int(trial[10][2]),           # meddra_classification
