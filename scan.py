@@ -395,11 +395,12 @@ def list_match(current_line: str, test_list: list) -> str:
     current_line: line from file
     test_list:  Read in a list with the following elements:
         - 0: database header term (str)
-        - 1: compiled regular expression (regexp object)
+        - 1: database type (str)
         - 2: value (str)
+        - 3: compiled regular expression (regexp object)
     :return: The captured substring
     """
-    m = test_list[1].match(" ".join(current_line.split()))
+    m = test_list[3].match(" ".join(current_line.split()))
     if m:
         return m.group(1)
     else:
@@ -414,8 +415,9 @@ def table_match(current_line: str, test_table: list, idx: int) -> bool:
     :param current_line: A line from the text listing of trials
     :param test_table: For each table in database, a list of:
         - 0: database header term (str)
-        - 1: compiled regular expression (regexp object)
+        - 1: database type
         - 2: value (str)
+        - 3: compiled regular expression (regexp object)
     :param idx: starting from what index in the table?
     :return:
     """
@@ -573,74 +575,74 @@ location_re = re.compile(r"^National Competent Authority:\s+(\S*)\s+[-]")
 location_list_start_re = re.compile("^E.8.6.3 If E.8.6.1 or E.8.6.2 are Yes")
 location_list_end_re = re.compile("^E.8.7 Trial has a data monitoring committee")
 
-# Lists that define all of the once-per-trial elements to be extracted follow
+# Lists that define all of the elements to be extracted follow
 # the same structure:
 FIELD_NAME = 0  # name used in database header
-REGEXP_REF = 1  # name assigned to each compiled regular expression, above
+REGEXP_REF = 3  # name assigned to each compiled regular expression, above
 FIELD_VAL = 2   # the value extracted
 
 # List of unique elements to extract to the Trial table for each trial
-trial = [["eudract", trial_eudract_re, ""],
-         ["sponsor_code", trial_sponsor_code_re, ""],
-         ["status", trial_status_re, ""],
-         ["db_date", trial_db_date_re, ""],
-         ["title", trial_title_re, ""],
-         ["NCT", trial_NCT_re, ""],
-         ["placebo", trial_placebo_re, ""],
-         ["condition", trial_condition_re, ""],
-         ["MedDRA_Version", trial_MedDRA_version_re, ""],
-         ["MedDRA_level", trial_MedDRA_level_re, ""],
-         ["MedDRA_classification", trial_MedDRA_classification_re, ""],
-         ["MedDRA_term", trial_MedDRA_term_re, ""],
-         ["MedDRA_SOC", trial_MedDRA_SOC_re, ""],
-         ["rare", trial_rare_re, ""],
-         ["fih", trial_fih_re, ""],
-         ["bioequivalence", trial_bioequivalence_re, ""],
-         ["phase1", trial_phase1_re, ""],
-         ["phase2", trial_phase2_re, ""],
-         ["phase3", trial_phase3_re, ""],
-         ["phase4", trial_phase4_re, ""],
-         ["diagnosis", trial_scope_diagnosis_re, ""],
-         ["prophylaxis", trial_scope_prophylaxis_re, ""],
-         ["scope_therapy", trial_scope_therapy_re, ""],
-         ["scope_safety", trial_scope_safety_re, ""],
-         ["scope_efficacy", trial_scope_efficacy_re, ""],
-         ["scope_PK", trial_scope_PK_re, ""],
-         ["scope_PD", trial_scope_PD_re, ""],
-         ["randomised", trial_scope_randomised_re, ""],
-         ["open_design", trial_scope_open_re, ""],
-         ["single_blind", trial_scope_single_blind_re, ""],
-         ["double_blind", trial_scope_double_blind_re, ""],
-         ["crossover", trial_scope_crossover_re, ""],
-         ["age_in_utero", trial_age_in_utero_re, ""],
-         ["age_preterm", trial_age_preterm_re, ""],
-         ["age_newborn", trial_age_newborn_re, ""],
-         ["age_under2", trial_age_under2_re, ""],
-         ["age_2to11", trial_age_2to11_re, ""],
-         ["age12to17", trial_age_12to17_re, ""],
-         ["age18to64", trial_age_18to64_re, ""],
-         ["age_65plus", trial_age_65plus_re, ""],
-         ["female", trial_female_re, ""],
-         ["male", trial_male_re, ""],
-         ["network", trial_network_name_re, ""],
-         ["EOT_status", trial_end_of_trial_status_re, ""],
-         ["EOT_date", trial_end_of_trial_date_re, ""]]
+trial = [["eudract", "TYPE", "", trial_eudract_re],
+         ["sponsor_code", "TYPE", "", trial_sponsor_code_re],
+         ["status", "TYPE", "", trial_status_re],
+         ["db_date", "TYPE", "", trial_db_date_re],
+         ["title", "TYPE", "", trial_title_re],
+         ["NCT", "TYPE", "", trial_NCT_re],
+         ["placebo", "TYPE", "", trial_placebo_re],
+         ["condition", "TYPE", "", trial_condition_re],
+         ["MedDRA_Version", "TYPE", "", trial_MedDRA_version_re],
+         ["MedDRA_level", "TYPE", "", trial_MedDRA_level_re],
+         ["MedDRA_classification", "TYPE", "", trial_MedDRA_classification_re],
+         ["MedDRA_term", "TYPE", "", trial_MedDRA_term_re],
+         ["MedDRA_SOC", "TYPE", "", trial_MedDRA_SOC_re],
+         ["rare", "TYPE", "", trial_rare_re],
+         ["fih", "TYPE", "", trial_fih_re],
+         ["bioequivalence", "TYPE", "", trial_bioequivalence_re],
+         ["phase1", "TYPE", "", trial_phase1_re],
+         ["phase2", "TYPE", "", trial_phase2_re],
+         ["phase3", "TYPE", "", trial_phase3_re],
+         ["phase4", "TYPE", "", trial_phase4_re],
+         ["diagnosis", "TYPE", "", trial_scope_diagnosis_re],
+         ["prophylaxis", "TYPE", "", trial_scope_prophylaxis_re],
+         ["scope_therapy", "TYPE", "", trial_scope_therapy_re],
+         ["scope_safety", "TYPE", "", trial_scope_safety_re],
+         ["scope_efficacy", "TYPE", "", trial_scope_efficacy_re],
+         ["scope_PK", "TYPE", "", trial_scope_PK_re],
+         ["scope_PD", "TYPE", "", trial_scope_PD_re],
+         ["randomised", "TYPE", "", trial_scope_randomised_re],
+         ["open_design", "TYPE", "", trial_scope_open_re],
+         ["single_blind", "TYPE", "", trial_scope_single_blind_re],
+         ["double_blind", "TYPE", "", trial_scope_double_blind_re],
+         ["crossover", "TYPE", "", trial_scope_crossover_re],
+         ["age_in_utero", "TYPE", "", trial_age_in_utero_re],
+         ["age_preterm", "TYPE", "", trial_age_preterm_re],
+         ["age_newborn", "TYPE", "", trial_age_newborn_re],
+         ["age_under2", "TYPE", "", trial_age_under2_re],
+         ["age_2to11", "TYPE", "", trial_age_2to11_re],
+         ["age12to17", "TYPE", "", trial_age_12to17_re],
+         ["age18to64", "TYPE", "", trial_age_18to64_re],
+         ["age_65plus", "TYPE", "", trial_age_65plus_re],
+         ["female", "TYPE", "", trial_female_re],
+         ["male", "TYPE", "", trial_male_re],
+         ["network", "TYPE", "", trial_network_name_re],
+         ["EOT_status", "TYPE", "", trial_end_of_trial_status_re],
+         ["EOT_date", "TYPE", "", trial_end_of_trial_date_re]]
 
 # List of unique elements to extract to the Drug table for each trial
-drug = [["trade_name", imp_trade_name_re, ""],
-        ["product_name", imp_name_re, ""],
-        ["product_code", imp_code_re, ""],
-        ["inn", imp_inn_re, ""],
-        ["cas", imp_cas_re, ""],
-        ["sponsor_code", imp_sponsor_code, ""],
-        ["ev_substance", imp_ev_substance_re, ""],
-        ["imp_alt_names", imp_alt_names_re, ""]]
+drug = [["trade_name", "TYPE", "", imp_trade_name_re],
+        ["product_name", "TYPE", "", imp_name_re],
+        ["product_code", "TYPE", "", imp_code_re],
+        ["inn", "TYPE", "", imp_inn_re],
+        ["cas", "TYPE", "", imp_cas_re, ""],
+        ["sponsor_code", "TYPE", "", imp_sponsor_code],
+        ["ev_substance", "TYPE", "", imp_ev_substance_re],
+        ["imp_alt_names", "TYPE", "", imp_alt_names_re]]
 
 # List of unique elements to extract to the Sponsor table for each trial
-sponsor = [["sponsor_name", sponsor_name_re, ""],
-           ["sponsor_org", sponsor_org_re, ""],
-           ["sponsor_contact", sponsor_contact_re, ""],
-           ["sponsor_email", sponsor_email_re, ""]]
+sponsor = [["sponsor_name", "TYPE", "", sponsor_name_re],
+           ["sponsor_org", "TYPE", "", sponsor_org_re],
+           ["sponsor_contact", "TYPE", "", sponsor_contact_re],
+           ["sponsor_email", "TYPE", "", sponsor_email_re]]
 
 # Sets are used for sponsor and location to consolidate repeating data
 drug_list = []
