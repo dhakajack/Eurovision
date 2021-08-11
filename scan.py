@@ -44,50 +44,9 @@ def create_databases(filespec: str) -> None:
 
     with sqlite3.connect(filespec) as db:
         db_trial_def = """CREATE TABLE trial(
-        eudract TEXT NOT NULL,
-        sponsor_code TEXT NOT NULL,
-        status TEXT NOT NULL,
-        db_date TEXT NOT NULL,
-        title TEXT NOT NULL,
-        nct TEXT NOT NULL,
-        placebo BOOLEAN NOT NULL,
-        condition TEXT NOT NULL)"""
-        # meddra_version TEXT NULL,
-        # meddra_level TEXT NOT NULL,
-        # meddra_classification, INTEGER NOT NULL,
-        # meddra_term TEXT NOT NULL,
-        # meddra_soc INTEGER NOT NULL,
-        # rare INTEGER NOT NULL,
-        # fih INTEGER NOT NULL,
-        # bioequivalence INTEGER NOT NULL,
-        # phase1 INTEGER NOT NULL,
-        # phase2 INTEGER NOT NULL,
-        # phase3 INTEGER NOT NULL,
-        # phase4 INTEGER NOT NULL,
-        # diagnosis INTEGER NOT NULL,
-        # prophylaxis INTEGER NOT NULL,
-        # therapy INTEGER NOT NULL,
-        # safety INTEGER NOT NULL,
-        # efficacy INTEGER NOT NULL,
-        # pk INTEGER NOT NULL,
-        # pd INTEGER NOT NULL,
-        # randomised INTEGER NOT NULL,
-        # open_design INTEGER NOT NULL,
-        # single_blind INTEGER NOT NULL,
-        # double_blind INTEGER NOT NULL,
-        # crossover INTEGER NOT NULL,
-        # age_in_utero INTEGER NOT NULL,
-        # age_under2 INTEGER NOT NULL,
-        # age_2to11 INTEGER NOT NULL,
-        # age_18to64 INTEGER NOT NULL,
-        # age_65plus INTEGER NOT NULL,
-        # female INTEGER NOT NULL,
-        # male INTEGER NOT NULL,
-        # network TEXT NOT NULL,
-        # eot_status TEXT NOT NULL,
-        # eot_date TEXT NOT NULL
-        # )
-        # """
+        {}
+        )
+        """
 
         db_drug_def = """CREATE TABLE drug(
         eudract TEXT NOT NULL,
@@ -107,7 +66,7 @@ def create_databases(filespec: str) -> None:
         )
         """
 
-        db.execute(db_trial_def)
+        db.execute(db_trial_def.format(", \n".join([" ".join(x[0:2]) for x in trial])))
         db.execute(db_drug_def.format(", \n".join([" ".join(x[0:2]) for x in drug])))
         db.execute(db_sponsor_def.format(", \n".join([" ".join(x[0:2]) for x in sponsor])))
         db.execute(db_location_def)
@@ -129,99 +88,55 @@ def update_trial(db):
     """
     print("Updating trial {}".format(trial[0][2]))
     add_trial_stmt = """INSERT INTO trial(
-                        eudract,
-                        sponsor_code,
-                        status,
-                        db_date,
-                        title,
-                        nct,
-                        placebo,
-                        condition) VALUES({})"""
-    #                     meddra_version,
-    #                     meddra_level,
-    #                     meddra_classification,
-    #                     meddra_term,
-    #                     meddra_soc,
-    #                     rare,
-    #                     fih,
-    #                     bioequivalence,
-    #                     phase1,
-    #                     phase2,
-    #                     phase3,
-    #                     phase4,
-    #                     diagnosis,
-    #                     prophylaxis,
-    #                     therapy,
-    #                     safety,
-    #                     efficacy,
-    #                     pk,
-    #                     pd,
-    #                     randomised,
-    #                     open_design,
-    #                     single_blind,
-    #                     double_blind,
-    #                     crossover,
-    #                     age_in_utero,
-    #                     age_preterm,
-    #                     age_newborn,
-    #                     age_under2,
-    #                     age_2to11,
-    #                     age_12to17,
-    #                     age_18to64,
-    #                     age_65plus,
-    #                     female,
-    #                     male,
-    #                     network,
-    #                     eot_status,
-    #                     eot_date)
-    #                     VALUES({})"""
-    db.execute(add_trial_stmt.format(",".join("?"*8)), (
+                        {}) 
+                        VALUES({})"""
+    db.execute(add_trial_stmt.format(", \n".join([x[0] for x in trial]), ",".join("?" * len(trial))), (
                trial[0][2],                 # eudract
                trial[1][2],                 # sponsor
                trial[2][2],                 # status
                trial[3][2],                 # db_date
                trial[4][2],                 # title
                trial[5][2],                 # nct
-               trial[6][2],                # placebo
-               trial[7][2]))               # condition
-    #            trial[8][2],                 # meddra_version
-    #            trial[9][2],                 # meddra_level
-    #            int(trial[10][2]),           # meddra_classification
-    #            trial[11][2],                # meddra_term
-    #            int(trial[12][2]),           # meddra_soc
-    #            y_n_to_int(trial[13][2]),    # rare
-    #            y_n_to_int(trial[14][2]),    # fih
-    #            y_n_to_int(trial[15][2]),    # bioequivalence
-    #            y_n_to_int(trial[16][2]),    # phase1
-    #            y_n_to_int(trial[17][2]),    # phase2
-    #            y_n_to_int(trial[18][2]),    # phase3
-    #            y_n_to_int(trial[19][2]),    # phase4
-    #            y_n_to_int(trial[20][2]),    # diagnosis
-    #            y_n_to_int(trial[21][2]),    # prophylaxis
-    #            y_n_to_int(trial[22][2]),    # therapy
-    #            y_n_to_int(trial[23][2]),    # safety
-    #            y_n_to_int(trial[24][2]),    # efficacy
-    #            y_n_to_int(trial[25][2]),    # pk
-    #            y_n_to_int(trial[26][2]),    # pd
-    #            y_n_to_int(trial[27][2]),    # randomised
-    #            y_n_to_int(trial[28][2]),    # open_design
-    #            y_n_to_int(trial[29][2]),    # single_blind
-    #            y_n_to_int(trial[30][2]),    # double_blind
-    #            y_n_to_int(trial[31][2]),    # crossover
-    #            y_n_to_int(trial[32][2]),    # age_in_utero
-    #            y_n_to_int(trial[33][2]),    # age_preterm
-    #            y_n_to_int(trial[34][2]),    # age_newborn
-    #            y_n_to_int(trial[35][2]),    # age_under2
-    #            y_n_to_int(trial[36][2]),    # age_2to11
-    #            y_n_to_int(trial[37][2]),    # age_12to17
-    #            y_n_to_int(trial[38][2]),    # age_18to64
-    #            y_n_to_int(trial[39][2]),    # age_65plus
-    #            y_n_to_int(trial[40][2]),    # female
-    #            y_n_to_int(trial[41][2]),    # male
-    #            trial[42][2],                # network
-    #            trial[43][2],                # eot_status
-    #            trial[44][2]                 # eot_date
-    #            )
+               y_n_to_int(trial[6][2]),     # placebo
+               trial[7][2],                 # condition
+               trial[8][2],                 # meddra_version
+               trial[9][2],                 # meddra_level
+               trial[10][2],                # meddra_classification
+               trial[11][2],                # meddra_term
+               trial[12][2],                # meddra_soc
+               y_n_to_int(trial[13][2]),    # rare
+               y_n_to_int(trial[14][2]),    # fih
+               y_n_to_int(trial[15][2]),    # bioequivalence
+               y_n_to_int(trial[16][2]),    # phase1
+               y_n_to_int(trial[17][2]),    # phase2
+               y_n_to_int(trial[18][2]),    # phase3
+               y_n_to_int(trial[19][2]),    # phase4
+               y_n_to_int(trial[20][2]),    # diagnosis
+               y_n_to_int(trial[21][2]),    # prophylaxis
+               y_n_to_int(trial[22][2]),    # therapy
+               y_n_to_int(trial[23][2]),    # safety
+               y_n_to_int(trial[24][2]),    # efficacy
+               y_n_to_int(trial[25][2]),    # pk
+               y_n_to_int(trial[26][2]),    # pd
+               y_n_to_int(trial[27][2]),    # randomised
+               y_n_to_int(trial[28][2]),    # open_design
+               y_n_to_int(trial[29][2]),    # single_blind
+               y_n_to_int(trial[30][2]),    # double_blind
+               y_n_to_int(trial[31][2]),    # crossover
+               y_n_to_int(trial[32][2]),    # age_in_utero
+               y_n_to_int(trial[33][2]),    # age_preterm
+               y_n_to_int(trial[34][2]),    # age_newborn
+               y_n_to_int(trial[35][2]),    # age_under2
+               y_n_to_int(trial[36][2]),    # age_2to11
+               y_n_to_int(trial[37][2]),    # age_12to17
+               y_n_to_int(trial[38][2]),    # age_18to64
+               y_n_to_int(trial[39][2]),    # age_65plus
+               y_n_to_int(trial[40][2]),    # female
+               y_n_to_int(trial[41][2]),    # male
+               trial[42][2],                # network
+               trial[43][2],                # eot_status
+               trial[44][2]                 # eot_date
+               ))
 
 
 def drug_fields_match(okptr: str, currptr: str) -> bool:
@@ -279,7 +194,7 @@ def update_drug(db, list_of_drugs):
     add_drug_stmt = """INSERT INTO drug(eudract, {}) 
                     VALUES({})"""
     for (trade, product, code, inn, cas, sponsor_code, alt_name, ev_substance) in list_of_drugs:
-        db.execute(add_drug_stmt.format(", \n".join([x[0] for x in drug]),",".join("?" * (len(drug) + 1))),
+        db.execute(add_drug_stmt.format(", \n".join([x[0] for x in drug]), ",".join("?" * (len(drug) + 1))),
                    (trial[0][2],
                     trade,
                     product,
@@ -503,7 +418,7 @@ trial_sponsor_code_re = re.compile("^Sponsor's Protocol Code Number: (.*$)")
 trial_status_re = re.compile("^Trial Status: (.*$)")
 trial_db_date_re = re.compile("^Date on which this record was first entered in the EudraCT database: (.*$)")
 trial_title_re = re.compile("^A.3 Full title of the trial: (.*$)")
-trial_NCT_re = re.compile(r"^A.5.2 US NCT \(ClinicalTrials.gov registry\) number: NCT(\d+)")
+trial_NCT_re = re.compile(r"^A.5.2 US NCT \(ClinicalTrials.gov registry\) number: (NCT\d+)")
 trial_placebo_re = re.compile(r"D.8.1 Is a Placebo used in this Trial\? (.*$)")
 trial_condition_re = re.compile(r"^E.1.1 Medical condition\(s\) being investigated: (.*$)")
 trial_MedDRA_version_re = re.compile("^E.1.2 Version: ([0-9.]+)")
@@ -574,51 +489,51 @@ REGEXP_REF = 3  # name assigned to each compiled regular expression, above
 FIELD_VAL = 2   # the value extracted
 
 # List of unique elements to extract to the Trial table for each trial
-trial = [["eudract", "TYPE", "", trial_eudract_re],
-         ["sponsor_code", "TYPE", "", trial_sponsor_code_re],
-         ["status", "TYPE", "", trial_status_re],
-         ["db_date", "TYPE", "", trial_db_date_re],
-         ["title", "TYPE", "", trial_title_re],
-         ["NCT", "TYPE", "", trial_NCT_re],
-         ["placebo", "TYPE", "", trial_placebo_re],
-         ["condition", "TYPE", "", trial_condition_re],
-         ["MedDRA_Version", "TYPE", "", trial_MedDRA_version_re],
-         ["MedDRA_level", "TYPE", "", trial_MedDRA_level_re],
-         ["MedDRA_classification", "TYPE", "", trial_MedDRA_classification_re],
-         ["MedDRA_term", "TYPE", "", trial_MedDRA_term_re],
-         ["MedDRA_SOC", "TYPE", "", trial_MedDRA_SOC_re],
-         ["rare", "TYPE", "", trial_rare_re],
-         ["fih", "TYPE", "", trial_fih_re],
-         ["bioequivalence", "TYPE", "", trial_bioequivalence_re],
-         ["phase1", "TYPE", "", trial_phase1_re],
-         ["phase2", "TYPE", "", trial_phase2_re],
-         ["phase3", "TYPE", "", trial_phase3_re],
-         ["phase4", "TYPE", "", trial_phase4_re],
-         ["diagnosis", "TYPE", "", trial_scope_diagnosis_re],
-         ["prophylaxis", "TYPE", "", trial_scope_prophylaxis_re],
-         ["scope_therapy", "TYPE", "", trial_scope_therapy_re],
-         ["scope_safety", "TYPE", "", trial_scope_safety_re],
-         ["scope_efficacy", "TYPE", "", trial_scope_efficacy_re],
-         ["scope_PK", "TYPE", "", trial_scope_PK_re],
-         ["scope_PD", "TYPE", "", trial_scope_PD_re],
-         ["randomised", "TYPE", "", trial_scope_randomised_re],
-         ["open_design", "TYPE", "", trial_scope_open_re],
-         ["single_blind", "TYPE", "", trial_scope_single_blind_re],
-         ["double_blind", "TYPE", "", trial_scope_double_blind_re],
-         ["crossover", "TYPE", "", trial_scope_crossover_re],
-         ["age_in_utero", "TYPE", "", trial_age_in_utero_re],
-         ["age_preterm", "TYPE", "", trial_age_preterm_re],
-         ["age_newborn", "TYPE", "", trial_age_newborn_re],
-         ["age_under2", "TYPE", "", trial_age_under2_re],
-         ["age_2to11", "TYPE", "", trial_age_2to11_re],
-         ["age12to17", "TYPE", "", trial_age_12to17_re],
-         ["age18to64", "TYPE", "", trial_age_18to64_re],
-         ["age_65plus", "TYPE", "", trial_age_65plus_re],
-         ["female", "TYPE", "", trial_female_re],
-         ["male", "TYPE", "", trial_male_re],
-         ["network", "TYPE", "", trial_network_name_re],
-         ["EOT_status", "TYPE", "", trial_end_of_trial_status_re],
-         ["EOT_date", "TYPE", "", trial_end_of_trial_date_re]]
+trial = [["eudract", "TEXT NOT NULL", "", trial_eudract_re],
+         ["sponsor_code", "TEXT NOT NULL", "", trial_sponsor_code_re],
+         ["status", "TEXT NOT NULL", "", trial_status_re],
+         ["db_date", "TEXT NOT NULL", "", trial_db_date_re],
+         ["title", "TEXT NOT NULL", "", trial_title_re],
+         ["nct", "TEXT NOT NULL", "", trial_NCT_re],
+         ["placebo", "INTEGER NOT NULL", "", trial_placebo_re],
+         ["condition", "TEXT NOT NULL", "", trial_condition_re],
+         ["meddra_version", "TEXT NOT NULL", "", trial_MedDRA_version_re],
+         ["meddra_level", "TEXT NOT NULL", "", trial_MedDRA_level_re],
+         ["meddra_classification", "TEXT NOT NULL", "", trial_MedDRA_classification_re],
+         ["meddra_term", "TEXT NOT NULL", "", trial_MedDRA_term_re],
+         ["meddra_soc", "TEXT NOT NULL", "", trial_MedDRA_SOC_re],
+         ["rare", "INTEGER NOT NULL", "", trial_rare_re],
+         ["fih", "INTEGER NOT NULL", "", trial_fih_re],
+         ["bioequivalence", "INTEGER NOT NULL", "", trial_bioequivalence_re],
+         ["phase1", "INTEGER NOT NULL", "", trial_phase1_re],
+         ["phase2", "INTEGER NOT NULL", "", trial_phase2_re],
+         ["phase3", "INTEGER NOT NULL", "", trial_phase3_re],
+         ["phase4", "INTEGER NOT NULL", "", trial_phase4_re],
+         ["diagnosis", "INTEGER NOT NULL", "", trial_scope_diagnosis_re],
+         ["prophylaxis", "INTEGER NOT NULL", "", trial_scope_prophylaxis_re],
+         ["therapy", "INTEGER NOT NULL", "", trial_scope_therapy_re],
+         ["safety", "INTEGER NOT NULL", "", trial_scope_safety_re],
+         ["efficacy", "INTEGER NOT NULL", "", trial_scope_efficacy_re],
+         ["pk", "INTEGER NOT NULL", "", trial_scope_PK_re],
+         ["pd", "INTEGER NOT NULL", "", trial_scope_PD_re],
+         ["randomised", "INTEGER NOT NULL", "", trial_scope_randomised_re],
+         ["open_design", "INTEGER NOT NULL", "", trial_scope_open_re],
+         ["single_blind", "INTEGER NOT NULL", "", trial_scope_single_blind_re],
+         ["double_blind", "INTEGER NOT NULL", "", trial_scope_double_blind_re],
+         ["crossover", "INTEGER NOT NULL", "", trial_scope_crossover_re],
+         ["age_in_utero", "INTEGER NOT NULL", "", trial_age_in_utero_re],
+         ["age_preterm", "INTEGER NOT NULL", "", trial_age_preterm_re],
+         ["age_newborn", "INTEGER NOT NULL", "", trial_age_newborn_re],
+         ["age_under2", "INTEGER NOT NULL", "", trial_age_under2_re],
+         ["age_2to11", "INTEGER NOT NULL", "", trial_age_2to11_re],
+         ["age12to17", "INTEGER NOT NULL", "", trial_age_12to17_re],
+         ["age18to64", "INTEGER NOT NULL", "", trial_age_18to64_re],
+         ["age_65plus", "INTEGER NOT NULL", "", trial_age_65plus_re],
+         ["female", "INTEGER NOT NULL", "", trial_female_re],
+         ["male", "INTEGER NOT NULL", "", trial_male_re],
+         ["network", "TEXT NOT NULL", "", trial_network_name_re],
+         ["eot_status", "TEXT NOT NULL", "", trial_end_of_trial_status_re],
+         ["eot_date", "TEXT NOT NULL", "", trial_end_of_trial_date_re]]
 
 # List of unique elements to extract to the Drug table for each trial
 drug = [["trade", "TEXT NOT NULL", "", imp_trade_name_re],
