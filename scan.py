@@ -91,23 +91,13 @@ def create_databases(filespec: str) -> None:
 
         db_drug_def = """CREATE TABLE drug(
         eudract TEXT NOT NULL,
-        trade TEXT NOT NULL,
-        product TEXT NOT NULL,
-        code TEXT NOT NULL,
-        inn TEXT NOT NULL,
-        cas TEXT NOT NULL,
-        sponsor_code TEXT NOT NULL,
-        ev_substance TEXT NOT NULL,
-        alt_name TEXT NOT NULL
+        {}
         )
         """
 
         db_sponsor_def = """CREATE TABLE sponsor(
         eudract TEXT NOT NULL,
-        name TEXT NOT NULL,
-        org TEXT NOT NULL,
-        contact TEXT NOT NULL,
-        email TEXT NOT NULL
+        {}
         )
         """
 
@@ -118,8 +108,8 @@ def create_databases(filespec: str) -> None:
         """
 
         db.execute(db_trial_def)
-        db.execute(db_drug_def)
-        db.execute(db_sponsor_def)
+        db.execute(db_drug_def.format(", \n".join([" ".join(x[0:2]) for x in drug])))
+        db.execute(db_sponsor_def.format(", \n".join([" ".join(x[0:2]) for x in sponsor])))
         db.execute(db_location_def)
     db.close()
 
@@ -286,18 +276,19 @@ def update_drug(db, list_of_drugs):
                     current_ptr += 1
             ok_ptr += 1
     list_of_drugs = list_of_drugs[:top_ptr]
-    add_drug_stmt = """INSERT INTO drug(eudract, trade, product, code, inn, cas, sponsor_code, ev_substance, alt_name) 
-                    VALUES(?,?,?,?,?,?,?,?,?)"""
+    add_drug_stmt = """INSERT INTO drug(eudract, {}) 
+                    VALUES({})"""
     for (trade, product, code, inn, cas, sponsor_code, alt_name, ev_substance) in list_of_drugs:
-        db.execute(add_drug_stmt, (trial[0][2],
-                                   trade,
-                                   product,
-                                   code,
-                                   inn,
-                                   cas,
-                                   sponsor_code,
-                                   ev_substance,
-                                   alt_name))  # This is intentional, want alt listed last in db
+        db.execute(add_drug_stmt.format(", \n".join([x[0] for x in drug]),",".join("?" * (len(drug) + 1))),
+                   (trial[0][2],
+                    trade,
+                    product,
+                    code,
+                    inn,
+                    cas,
+                    sponsor_code,
+                    ev_substance,
+                    alt_name))  # This order is intentional, want alt listed last in db
 
 
 def update_sponsor(db):
@@ -305,14 +296,15 @@ def update_sponsor(db):
     Write the sponsor-related data for a given trial to the database.
     :return:
     """
-    add_sponsor_stmt = """INSERT INTO sponsor(eudract, name, org, contact, email) 
+    add_sponsor_stmt = """INSERT INTO sponsor(eudract, {}) 
                         VALUES(?,?,?,?,?)"""
     for (sponsor_name, sponsor_org, sponsor_contact, sponsor_email) in sponsor_set:
-        db.execute(add_sponsor_stmt, (trial[0][2],
-                                      sponsor_name,
-                                      sponsor_org,
-                                      sponsor_contact,
-                                      sponsor_email))
+        db.execute(add_sponsor_stmt.format(", \n".join([x[0] for x in sponsor])),
+                   (trial[0][2],
+                    sponsor_name,
+                    sponsor_org,
+                    sponsor_contact,
+                    sponsor_email))
 
 
 def update_location(db):
@@ -629,20 +621,20 @@ trial = [["eudract", "TYPE", "", trial_eudract_re],
          ["EOT_date", "TYPE", "", trial_end_of_trial_date_re]]
 
 # List of unique elements to extract to the Drug table for each trial
-drug = [["trade_name", "TYPE", "", imp_trade_name_re],
-        ["product_name", "TYPE", "", imp_name_re],
-        ["product_code", "TYPE", "", imp_code_re],
-        ["inn", "TYPE", "", imp_inn_re],
-        ["cas", "TYPE", "", imp_cas_re, ""],
-        ["sponsor_code", "TYPE", "", imp_sponsor_code],
-        ["ev_substance", "TYPE", "", imp_ev_substance_re],
-        ["imp_alt_names", "TYPE", "", imp_alt_names_re]]
+drug = [["trade", "TEXT NOT NULL", "", imp_trade_name_re],
+        ["product", "TEXT NOT NULL", "", imp_name_re],
+        ["code", "TEXT NOT NULL", "", imp_code_re],
+        ["inn", "TEXT NOT NULL", "", imp_inn_re],
+        ["cas", "TEXT NOT NULL", "", imp_cas_re, ""],
+        ["sponsor_code", "TEXT NOT NULL", "", imp_sponsor_code],
+        ["ev_substance", "TEXT NOT NULL", "", imp_ev_substance_re],
+        ["alt_names", "TEXT NOT NULL", "", imp_alt_names_re]]
 
 # List of unique elements to extract to the Sponsor table for each trial
-sponsor = [["sponsor_name", "TYPE", "", sponsor_name_re],
-           ["sponsor_org", "TYPE", "", sponsor_org_re],
-           ["sponsor_contact", "TYPE", "", sponsor_contact_re],
-           ["sponsor_email", "TYPE", "", sponsor_email_re]]
+sponsor = [["name", "TEXT NOT NULL", "", sponsor_name_re],
+           ["org", "TEXT NOT NULL", "", sponsor_org_re],
+           ["contact", "TEXT NOT NULL", "", sponsor_contact_re],
+           ["email", "TEXT NOT NULL", "", sponsor_email_re]]
 
 # Sets are used for sponsor and location to consolidate repeating data
 drug_list = []
