@@ -8,6 +8,13 @@ exploration.
 import re
 import sqlite3
 
+# Lists that define attributes of the trial itself, drugs, and sponsors all follow
+# the same structure:
+FIELD_NAME = 0  # name used in database header
+FIELD_TYPE = 1  # type of field for database; e.g., TEXT NOT NULL
+FIELD_VAL = 2   # the value extracted
+REGEXP_REF = 3  # name assigned to each compiled regular expression, above
+
 
 def wipe_list(target: list, start: int) -> None:
     """
@@ -66,76 +73,84 @@ def create_databases(filespec: str) -> None:
         )
         """
 
-        db.execute(db_trial_def.format(", \n".join([" ".join(x[0:2]) for x in trial])))
-        db.execute(db_drug_def.format(", \n".join([" ".join(x[0:2]) for x in drug])))
-        db.execute(db_sponsor_def.format(", \n".join([" ".join(x[0:2]) for x in sponsor])))
+        db.execute(db_trial_def.format(", \n".join([" ".join(x[FIELD_NAME:FIELD_VAL]) for x in trial])))
+        db.execute(db_drug_def.format(", \n".join([" ".join(x[FIELD_NAME:FIELD_VAL]) for x in drug])))
+        db.execute(db_sponsor_def.format(", \n".join([" ".join(x[FIELD_NAME:FIELD_VAL]) for x in sponsor])))
         db.execute(db_location_def)
     db.close()
 
 
 def y_n_to_int(answer: str) -> int:
+    """
+    Helper function to convert "Yes" to 1, which is how boolean True is recorded in sqlite; any
+    other value including "" is taken as a False. Case insensitive.
+    :param answer: "Yes" or anything other string.
+    :return: 1 or 0 for yes or no.
+    """
     if answer.casefold() == "yes":
         return 1
     else:
         return 0
 
 
-def update_trial(db):
+def update_trial(db) -> None:
     """
     Write the core parameters for a given trial (defined by unique
-    Eudract number) to database.
+    Eudract number) to database. Uses replacement fields, which may
+    be overkill, but just in case anyone actually managed to stick
+    some SQL into the drug registry itself.
     :return:
     """
-    print("Updating trial {}".format(trial[0][2]))
+    print("Updating trial {}".format(trial[0][FIELD_VAL]))
     add_trial_stmt = """INSERT INTO trial(
                         {}) 
                         VALUES({})"""
-    db.execute(add_trial_stmt.format(", \n".join([x[0] for x in trial]), ",".join("?" * len(trial))), (
-               trial[0][2],                 # eudract
-               trial[1][2],                 # sponsor
-               trial[2][2],                 # status
-               trial[3][2],                 # db_date
-               trial[4][2],                 # title
-               trial[5][2],                 # nct
-               y_n_to_int(trial[6][2]),     # placebo
-               trial[7][2],                 # condition
-               trial[8][2],                 # meddra_version
-               trial[9][2],                 # meddra_level
-               trial[10][2],                # meddra_classification
-               trial[11][2],                # meddra_term
-               trial[12][2],                # meddra_soc
-               y_n_to_int(trial[13][2]),    # rare
-               y_n_to_int(trial[14][2]),    # fih
-               y_n_to_int(trial[15][2]),    # bioequivalence
-               y_n_to_int(trial[16][2]),    # phase1
-               y_n_to_int(trial[17][2]),    # phase2
-               y_n_to_int(trial[18][2]),    # phase3
-               y_n_to_int(trial[19][2]),    # phase4
-               y_n_to_int(trial[20][2]),    # diagnosis
-               y_n_to_int(trial[21][2]),    # prophylaxis
-               y_n_to_int(trial[22][2]),    # therapy
-               y_n_to_int(trial[23][2]),    # safety
-               y_n_to_int(trial[24][2]),    # efficacy
-               y_n_to_int(trial[25][2]),    # pk
-               y_n_to_int(trial[26][2]),    # pd
-               y_n_to_int(trial[27][2]),    # randomised
-               y_n_to_int(trial[28][2]),    # open_design
-               y_n_to_int(trial[29][2]),    # single_blind
-               y_n_to_int(trial[30][2]),    # double_blind
-               y_n_to_int(trial[31][2]),    # crossover
-               y_n_to_int(trial[32][2]),    # age_in_utero
-               y_n_to_int(trial[33][2]),    # age_preterm
-               y_n_to_int(trial[34][2]),    # age_newborn
-               y_n_to_int(trial[35][2]),    # age_under2
-               y_n_to_int(trial[36][2]),    # age_2to11
-               y_n_to_int(trial[37][2]),    # age_12to17
-               y_n_to_int(trial[38][2]),    # age_18to64
-               y_n_to_int(trial[39][2]),    # age_65plus
-               y_n_to_int(trial[40][2]),    # female
-               y_n_to_int(trial[41][2]),    # male
-               trial[42][2],                # network
-               trial[43][2],                # eot_status
-               trial[44][2]                 # eot_date
+    db.execute(add_trial_stmt.format(", \n".join([x[FIELD_NAME] for x in trial]), ",".join("?" * len(trial))), (
+               trial[0][FIELD_VAL],                 # eudract
+               trial[1][FIELD_VAL],                 # sponsor
+               trial[2][FIELD_VAL],                 # status
+               trial[3][FIELD_VAL],                 # db_date
+               trial[4][FIELD_VAL],                 # title
+               trial[5][FIELD_VAL],                 # nct
+               y_n_to_int(trial[6][FIELD_VAL]),     # placebo
+               trial[7][FIELD_VAL],                 # condition
+               trial[8][FIELD_VAL],                 # meddra_version
+               trial[9][FIELD_VAL],                 # meddra_level
+               trial[10][FIELD_VAL],                # meddra_classification
+               trial[11][FIELD_VAL],                # meddra_term
+               trial[12][FIELD_VAL],                # meddra_soc
+               y_n_to_int(trial[13][FIELD_VAL]),    # rare
+               y_n_to_int(trial[14][FIELD_VAL]),    # fih
+               y_n_to_int(trial[15][FIELD_VAL]),    # bioequivalence
+               y_n_to_int(trial[16][FIELD_VAL]),    # phase1
+               y_n_to_int(trial[17][FIELD_VAL]),    # phase2
+               y_n_to_int(trial[18][FIELD_VAL]),    # phase3
+               y_n_to_int(trial[19][FIELD_VAL]),    # phase4
+               y_n_to_int(trial[20][FIELD_VAL]),    # diagnosis
+               y_n_to_int(trial[21][FIELD_VAL]),    # prophylaxis
+               y_n_to_int(trial[22][FIELD_VAL]),    # therapy
+               y_n_to_int(trial[23][FIELD_VAL]),    # safety
+               y_n_to_int(trial[24][FIELD_VAL]),    # efficacy
+               y_n_to_int(trial[25][FIELD_VAL]),    # pk
+               y_n_to_int(trial[26][FIELD_VAL]),    # pd
+               y_n_to_int(trial[27][FIELD_VAL]),    # randomised
+               y_n_to_int(trial[28][FIELD_VAL]),    # open_design
+               y_n_to_int(trial[29][FIELD_VAL]),    # single_blind
+               y_n_to_int(trial[30][FIELD_VAL]),    # double_blind
+               y_n_to_int(trial[31][FIELD_VAL]),    # crossover
+               y_n_to_int(trial[32][FIELD_VAL]),    # age_in_utero
+               y_n_to_int(trial[33][FIELD_VAL]),    # age_preterm
+               y_n_to_int(trial[34][FIELD_VAL]),    # age_newborn
+               y_n_to_int(trial[35][FIELD_VAL]),    # age_under2
+               y_n_to_int(trial[36][FIELD_VAL]),    # age_2to11
+               y_n_to_int(trial[37][FIELD_VAL]),    # age_12to17
+               y_n_to_int(trial[38][FIELD_VAL]),    # age_18to64
+               y_n_to_int(trial[39][FIELD_VAL]),    # age_65plus
+               y_n_to_int(trial[40][FIELD_VAL]),    # female
+               y_n_to_int(trial[41][FIELD_VAL]),    # male
+               trial[42][FIELD_VAL],                # network
+               trial[43][FIELD_VAL],                # eot_status
+               trial[44][FIELD_VAL]                 # eot_date
                ))
 
 
@@ -155,8 +170,13 @@ def drug_fields_match(okptr: str, currptr: str) -> bool:
 def update_drug(db, list_of_drugs):
     """
     Write the drug data for a given trial to the database.
+    Caveat: This function does not capture more than one active substance per drug.
     :return:
     """
+    # Sort through drug entries, possibly representing one or several drugs in the trial to
+    # eliminate duplicates. When one entry contains information for a given drug not present
+    # in other entries, harvest that information so the final list for each drug combines
+    # all information available for that drug.
     top_ptr = len(list_of_drugs)
     if top_ptr > 1:
         ok_ptr = 0
@@ -190,12 +210,13 @@ def update_drug(db, list_of_drugs):
                 else:
                     current_ptr += 1
             ok_ptr += 1
+    # Slice the list down to just the unique drug entries and write to database
     list_of_drugs = list_of_drugs[:top_ptr]
     add_drug_stmt = """INSERT INTO drug(eudract, {}) 
                     VALUES({})"""
     for (trade, product, code, inn, cas, sponsor_code, alt_name, ev_substance) in list_of_drugs:
-        db.execute(add_drug_stmt.format(", \n".join([x[0] for x in drug]), ",".join("?" * (len(drug) + 1))),
-                   (trial[0][2],
+        db.execute(add_drug_stmt.format(", \n".join([x[FIELD_NAME] for x in drug]), ",".join("?" * (len(drug) + 1))),
+                   (trial[0][FIELD_VAL],
                     trade,
                     product,
                     code,
@@ -214,8 +235,8 @@ def update_sponsor(db):
     add_sponsor_stmt = """INSERT INTO sponsor(eudract, {}) 
                         VALUES(?,?,?,?,?)"""
     for (sponsor_name, sponsor_org, sponsor_contact, sponsor_email) in sponsor_set:
-        db.execute(add_sponsor_stmt.format(", \n".join([x[0] for x in sponsor])),
-                   (trial[0][2],
+        db.execute(add_sponsor_stmt.format(", \n".join([x[FIELD_NAME] for x in sponsor])),
+                   (trial[0][FIELD_VAL],
                     sponsor_name,
                     sponsor_org,
                     sponsor_contact,
@@ -230,7 +251,7 @@ def update_location(db):
     add_location_stmt = """INSERT INTO location(eudract, location)
                             VALUES(?,?)"""
     for where in sorted(location_set):
-        db.execute(add_location_stmt, (trial[0][2],
+        db.execute(add_location_stmt, (trial[0][FIELD_VAL],
                                        where))
 
 
@@ -240,14 +261,14 @@ def add_drug_to_list():
     :return:
     """
     # if there is something in any of the fields, add that entry to the drug list
-    drug_list.append([drug[0][2].casefold(),    # Trade
-                      drug[1][2].casefold(),    # Product
-                      drug[2][2].casefold(),    # Code
-                      drug[3][2].casefold(),    # INN
-                      drug[4][2],               # CAS
-                      drug[5][2].casefold(),    # Current Sponsor Code
-                      drug[6][2].upper(),       # EV Substance
-                      drug[7][2].casefold()     # ALT
+    drug_list.append([drug[0][FIELD_VAL].casefold(),    # Trade
+                      drug[1][FIELD_VAL].casefold(),    # Product
+                      drug[2][FIELD_VAL].casefold(),    # Code
+                      drug[3][FIELD_VAL].casefold(),    # INN
+                      drug[4][FIELD_VAL],               # CAS
+                      drug[5][FIELD_VAL].casefold(),    # Current Sponsor Code
+                      drug[6][FIELD_VAL].upper(),       # EV Substance
+                      drug[7][FIELD_VAL].casefold()     # ALT
                       ])
 
 
@@ -256,21 +277,21 @@ def add_sponsor_to_set():
     Add a sponsor to the set of sponsor information, even if it duplicates some info.
     :return:
     """
-    sponsor_set.add((sponsor[0][2].casefold().title(),      # Name
-                     sponsor[1][2].casefold().title(),      # Org
-                     sponsor[2][2].casefold().title(),      # Contact
-                     sponsor[3][2].casefold()))             # email
+    sponsor_set.add((sponsor[0][FIELD_VAL].casefold().title(),      # Name
+                     sponsor[1][FIELD_VAL].casefold().title(),      # Org
+                     sponsor[2][FIELD_VAL].casefold().title(),      # Contact
+                     sponsor[3][FIELD_VAL].casefold()))             # email
 
 
 def empty_list(query_list: list) -> bool:
     """
     Determine if a list (e.g., drug) has no data. Sometimes trials have no drug at all listed,
-    in other cases, the IMP section may have an entry without an drug-identifing infomration.
+    in other cases, the IMP section may have an entry without an drug-identifing information.
     :param query_list:
     :return: True if the list has no data in its third element.
     """
     for i in range(len(query_list)):
-        if query_list[i][2] != "":
+        if query_list[i][FIELD_VAL] != "":
             return False
     return True
 
@@ -307,7 +328,7 @@ def list_match(current_line: str, test_list: list) -> str:
         - 3: compiled regular expression (regexp object)
     :return: The captured substring
     """
-    m = test_list[3].match(" ".join(current_line.split()))
+    m = test_list[REGEXP_REF].match(" ".join(current_line.split()))
     if m:
         return m.group(1)
     else:
@@ -332,10 +353,10 @@ def table_match(current_line: str, test_table: list, idx: int) -> bool:
         # If a element has already been defined, i.e., in an earlier pass through another
         # member-state version of the same trial, skip this. Don't overwrite the non-blank
         # values from the first trial listed
-        if test_table[i][2] == "":
+        if test_table[i][FIELD_VAL] == "":
             lm = list_match(current_line, test_table[i])
             if lm:
-                test_table[i][2] = lm
+                test_table[i][FIELD_VAL] = lm
                 return True
     return False
 
@@ -481,12 +502,6 @@ sponsor_email_re = re.compile(r"^B.5.6 E-mail:\s*(\S+@\S+[.]\S+)\s*$")
 location_re = re.compile(r"^National Competent Authority:\s+(\S*)\s+[-]")
 location_list_start_re = re.compile("^E.8.6.3 If E.8.6.1 or E.8.6.2 are Yes")
 location_list_end_re = re.compile("^E.8.7 Trial has a data monitoring committee")
-
-# Lists that define all of the elements to be extracted follow
-# the same structure:
-FIELD_NAME = 0  # name used in database header
-REGEXP_REF = 3  # name assigned to each compiled regular expression, above
-FIELD_VAL = 2   # the value extracted
 
 # List of unique elements to extract to the Trial table for each trial
 trial = [["eudract", "TEXT NOT NULL", "", trial_eudract_re],
