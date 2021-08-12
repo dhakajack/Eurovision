@@ -110,6 +110,13 @@ def update_trial(db) -> None:
     if(trial[43][FIELD_VAL]) and trial[2][FIELD_VAL].casefold() == "ongoing":
         trial[2][FIELD_VAL] = "Not Ongoing"
 
+    # If the meddra level is SOC rather than the expected PT, LLT, etc.,
+    # and there is no entry for the meddra SOC, copy the classification
+    # into the SOC field
+
+    if not trial[12][FIELD_VAL] and trial[9][FIELD_VAL].casefold() == "soc":
+        trial[12][FIELD_VAL] = trial[10][FIELD_VAL]
+
     print("Updating trial {}".format(trial[0][FIELD_VAL]))
     add_trial_stmt = """INSERT INTO trial(
                         {}) 
