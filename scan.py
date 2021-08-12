@@ -340,6 +340,9 @@ def table_match(current_line: str, test_table: list, idx: int) -> bool:
     Reads a line from the trial listing and tries to match it against
     regular expressions that define trial elements that are unique to each trial.
     When a match is found, the value is captured and stored back in the list.
+    Caveat: Where the database is not consistent, this value may not be reliable.
+    This algorithm favours responses with some content over null responses and for
+    yes/no fields, will take a yes over a no.
     :param current_line: A line from the text listing of trials
     :param test_table: For each table in database, a list of:
         - 0: database header term (str)
@@ -350,10 +353,14 @@ def table_match(current_line: str, test_table: list, idx: int) -> bool:
     :return:
     """
     for i in range(idx, len(test_table)):
-        # If a element has already been defined, i.e., in an earlier pass through another
-        # member-state version of the same trial, skip this. Don't overwrite the non-blank
-        # values from the first trial listed
-        if test_table[i][FIELD_VAL] == "":
+        # Don't override previously defined data elements except a "yes"
+        # trumps a "no" reply
+        if test_table[i][FIELD_VAL].casefold() == "no":
+            lm = list_match(current_line, test_table[i])
+            if lm.casefold() == "yes":
+                test_table[i][FIELD_VAL] = "yes"
+                return True
+        elif test_table[i][FIELD_VAL] == "":
             lm = list_match(current_line, test_table[i])
             if lm:
                 test_table[i][FIELD_VAL] = lm
