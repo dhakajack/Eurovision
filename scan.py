@@ -101,6 +101,15 @@ def update_trial(db) -> None:
     some SQL into the drug registry itself.
     :return:
     """
+    # Consistency check: Trial status (trial[2] is often not updated in one or more
+    # records for a trial. If any MS entry lists a completion date (trial[43], we do
+    # not know how the trial ended, but can be pretty sure that it did end. The status
+    # of 'not ongoing' is not a native value for this field to make it obvious that
+    # this was imputed during curation.
+
+    if(trial[43][FIELD_VAL]) and trial[2][FIELD_VAL].casefold() == "ongoing":
+        trial[2][FIELD_VAL] = "Not Ongoing"
+
     print("Updating trial {}".format(trial[0][FIELD_VAL]))
     add_trial_stmt = """INSERT INTO trial(
                         {}) 
@@ -149,8 +158,7 @@ def update_trial(db) -> None:
                y_n_to_int(trial[40][FIELD_VAL]),    # female
                y_n_to_int(trial[41][FIELD_VAL]),    # male
                trial[42][FIELD_VAL],                # network
-               trial[43][FIELD_VAL],                # eot_status
-               trial[44][FIELD_VAL]                 # eot_date
+               trial[43][FIELD_VAL]                 # eot_date
                ))
 
 
@@ -554,7 +562,6 @@ trial = [["eudract", "TEXT NOT NULL", "", trial_eudract_re],
          ["female", "INTEGER NOT NULL", "", trial_female_re],
          ["male", "INTEGER NOT NULL", "", trial_male_re],
          ["network", "TEXT NOT NULL", "", trial_network_name_re],
-         ["eot_status", "TEXT NOT NULL", "", trial_end_of_trial_status_re],
          ["eot_date", "TEXT NOT NULL", "", trial_end_of_trial_date_re]]
 
 # List of unique elements to extract to the Drug table for each trial
