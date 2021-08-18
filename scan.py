@@ -73,10 +73,17 @@ def create_databases(filespec: str) -> None:
         )
         """
 
+        db_location_index = "CREATE INDEX idx_location on location (eudract)"
+        db_sponsor_index = "CREATE INDEX idx_drug on drug (eudract)"
+        db_drug_index = "CREATE INDEX idx_sponsor on sponsor (eudract)"
+
         db.execute(db_trial_def.format(", \n".join([" ".join(x[FIELD_NAME:FIELD_VAL]) for x in trial])))
         db.execute(db_drug_def.format(", \n".join([" ".join(x[FIELD_NAME:FIELD_VAL]) for x in drug])))
         db.execute(db_sponsor_def.format(", \n".join([" ".join(x[FIELD_NAME:FIELD_VAL]) for x in sponsor])))
         db.execute(db_location_def)
+        db.execute(db_location_index)
+        db.execute(db_sponsor_index)
+        db.execute(db_drug_index)
     db.close()
 
 
@@ -597,7 +604,8 @@ drug_list = []
 sponsor_set = set()
 location_set = set()
 
-source_file = "EUCTReg20210803.txt"
+# source_file = "EUCTReg20210803.txt"
+source_file = "test2000x.txt"
 database_name = input("Name of database to write? > ")
 create_databases(database_name)
 parse_listing(source_file, database_name)
