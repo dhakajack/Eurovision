@@ -7,6 +7,7 @@ exploration.
 
 import re
 import sqlite3
+import time
 
 # Lists that define attributes of the trial itself, drugs, and sponsors all follow
 # the same structure:
@@ -607,5 +608,7 @@ location_set = set()
 # source_file = "EUCTReg20210803.txt"
 source_file = "test2000x.txt"
 database_name = input("Name of database to write? > ")
+start_time = time.time()
 create_databases(database_name)
 parse_listing(source_file, database_name)
+print("Run time: {}".format(time.time() - start_time))
