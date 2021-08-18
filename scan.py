@@ -121,52 +121,57 @@ def update_trial(db) -> None:
     add_trial_stmt = """INSERT INTO trial(
                         {}) 
                         VALUES({})"""
-    db.execute(add_trial_stmt.format(", \n".join([x[FIELD_NAME] for x in trial]), ",".join("?" * len(trial))), (
-               trial[0][FIELD_VAL],                 # eudract
-               trial[1][FIELD_VAL],                 # sponsor
-               trial[2][FIELD_VAL],                 # status
-               trial[3][FIELD_VAL],                 # db_date
-               trial[4][FIELD_VAL],                 # title
-               trial[5][FIELD_VAL],                 # nct
-               y_n_to_int(trial[6][FIELD_VAL]),     # placebo
-               trial[7][FIELD_VAL],                 # condition
-               trial[8][FIELD_VAL],                 # meddra_version
-               trial[9][FIELD_VAL],                 # meddra_level
-               trial[10][FIELD_VAL],                # meddra_classification
-               trial[11][FIELD_VAL],                # meddra_term
-               trial[12][FIELD_VAL],                # meddra_soc
-               y_n_to_int(trial[13][FIELD_VAL]),    # rare
-               y_n_to_int(trial[14][FIELD_VAL]),    # fih
-               y_n_to_int(trial[15][FIELD_VAL]),    # bioequivalence
-               y_n_to_int(trial[16][FIELD_VAL]),    # phase1
-               y_n_to_int(trial[17][FIELD_VAL]),    # phase2
-               y_n_to_int(trial[18][FIELD_VAL]),    # phase3
-               y_n_to_int(trial[19][FIELD_VAL]),    # phase4
-               y_n_to_int(trial[20][FIELD_VAL]),    # diagnosis
-               y_n_to_int(trial[21][FIELD_VAL]),    # prophylaxis
-               y_n_to_int(trial[22][FIELD_VAL]),    # therapy
-               y_n_to_int(trial[23][FIELD_VAL]),    # safety
-               y_n_to_int(trial[24][FIELD_VAL]),    # efficacy
-               y_n_to_int(trial[25][FIELD_VAL]),    # pk
-               y_n_to_int(trial[26][FIELD_VAL]),    # pd
-               y_n_to_int(trial[27][FIELD_VAL]),    # randomised
-               y_n_to_int(trial[28][FIELD_VAL]),    # open_design
-               y_n_to_int(trial[29][FIELD_VAL]),    # single_blind
-               y_n_to_int(trial[30][FIELD_VAL]),    # double_blind
-               y_n_to_int(trial[31][FIELD_VAL]),    # crossover
-               y_n_to_int(trial[32][FIELD_VAL]),    # age_in_utero
-               y_n_to_int(trial[33][FIELD_VAL]),    # age_preterm
-               y_n_to_int(trial[34][FIELD_VAL]),    # age_newborn
-               y_n_to_int(trial[35][FIELD_VAL]),    # age_under2
-               y_n_to_int(trial[36][FIELD_VAL]),    # age_2to11
-               y_n_to_int(trial[37][FIELD_VAL]),    # age_12to17
-               y_n_to_int(trial[38][FIELD_VAL]),    # age_18to64
-               y_n_to_int(trial[39][FIELD_VAL]),    # age_65plus
-               y_n_to_int(trial[40][FIELD_VAL]),    # female
-               y_n_to_int(trial[41][FIELD_VAL]),    # male
-               trial[42][FIELD_VAL],                # network
-               trial[43][FIELD_VAL]                 # eot_date
-               ))
+
+    try:
+        db.execute(add_trial_stmt.format(", \n".join([x[FIELD_NAME] for x in trial]), ",".join("?" * len(trial))), (
+                   trial[0][FIELD_VAL],                 # eudract
+                   trial[1][FIELD_VAL],                 # sponsor
+                   trial[2][FIELD_VAL],                 # status
+                   trial[3][FIELD_VAL],                 # db_date
+                   trial[4][FIELD_VAL],                 # title
+                   trial[5][FIELD_VAL],                 # nct
+                   y_n_to_int(trial[6][FIELD_VAL]),     # placebo
+                   trial[7][FIELD_VAL],                 # condition
+                   trial[8][FIELD_VAL],                 # meddra_version
+                   trial[9][FIELD_VAL],                 # meddra_level
+                   trial[10][FIELD_VAL],                # meddra_classification
+                   trial[11][FIELD_VAL],                # meddra_term
+                   trial[12][FIELD_VAL],                # meddra_soc
+                   y_n_to_int(trial[13][FIELD_VAL]),    # rare
+                   y_n_to_int(trial[14][FIELD_VAL]),    # fih
+                   y_n_to_int(trial[15][FIELD_VAL]),    # bioequivalence
+                   y_n_to_int(trial[16][FIELD_VAL]),    # phase1
+                   y_n_to_int(trial[17][FIELD_VAL]),    # phase2
+                   y_n_to_int(trial[18][FIELD_VAL]),    # phase3
+                   y_n_to_int(trial[19][FIELD_VAL]),    # phase4
+                   y_n_to_int(trial[20][FIELD_VAL]),    # diagnosis
+                   y_n_to_int(trial[21][FIELD_VAL]),    # prophylaxis
+                   y_n_to_int(trial[22][FIELD_VAL]),    # therapy
+                   y_n_to_int(trial[23][FIELD_VAL]),    # safety
+                   y_n_to_int(trial[24][FIELD_VAL]),    # efficacy
+                   y_n_to_int(trial[25][FIELD_VAL]),    # pk
+                   y_n_to_int(trial[26][FIELD_VAL]),    # pd
+                   y_n_to_int(trial[27][FIELD_VAL]),    # randomised
+                   y_n_to_int(trial[28][FIELD_VAL]),    # open_design
+                   y_n_to_int(trial[29][FIELD_VAL]),    # single_blind
+                   y_n_to_int(trial[30][FIELD_VAL]),    # double_blind
+                   y_n_to_int(trial[31][FIELD_VAL]),    # crossover
+                   y_n_to_int(trial[32][FIELD_VAL]),    # age_in_utero
+                   y_n_to_int(trial[33][FIELD_VAL]),    # age_preterm
+                   y_n_to_int(trial[34][FIELD_VAL]),    # age_newborn
+                   y_n_to_int(trial[35][FIELD_VAL]),    # age_under2
+                   y_n_to_int(trial[36][FIELD_VAL]),    # age_2to11
+                   y_n_to_int(trial[37][FIELD_VAL]),    # age_12to17
+                   y_n_to_int(trial[38][FIELD_VAL]),    # age_18to64
+                   y_n_to_int(trial[39][FIELD_VAL]),    # age_65plus
+                   y_n_to_int(trial[40][FIELD_VAL]),    # female
+                   y_n_to_int(trial[41][FIELD_VAL]),    # male
+                   trial[42][FIELD_VAL],                # network
+                   trial[43][FIELD_VAL]                 # eot_date
+                   ))
+    except sqlite3.IntegrityError:
+        print("Database integrity error, likely duplicate Eudract number for study {}"
+              .format(trial[0][FIELD_VAL]))
 
 
 def drug_fields_match(okptr: str, currptr: str) -> bool:
@@ -526,7 +531,7 @@ location_list_start_re = re.compile("^E.8.6.3 If E.8.6.1 or E.8.6.2 are Yes")
 location_list_end_re = re.compile("^E.8.7 Trial has a data monitoring committee")
 
 # List of unique elements to extract to the Trial table for each trial
-trial = [["eudract", "TEXT NOT NULL", "", trial_eudract_re],
+trial = [["eudract", "TEXT NOT NULL PRIMARY KEY", "", trial_eudract_re],
          ["sponsor_code", "TEXT NOT NULL", "", trial_sponsor_code_re],
          ["status", "TEXT NOT NULL", "", trial_status_re],
          ["db_date", "TEXT NOT NULL", "", trial_db_date_re],
@@ -592,7 +597,7 @@ drug_list = []
 sponsor_set = set()
 location_set = set()
 
-source_file = "test2000x.txt"
+source_file = "EUCTReg20210803.txt"
 database_name = input("Name of database to write? > ")
 create_databases(database_name)
 parse_listing(source_file, database_name)
