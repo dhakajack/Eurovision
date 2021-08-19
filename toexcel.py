@@ -52,29 +52,29 @@ trial_data = list(extract)
 cursor.execute("SELECT {} FROM drug WHERE eudract = \"{}\"".format(drug_term_string, trial_selected))
 rows = cursor.fetchall()
 for drug_data in rows:
-    if drug_data[3]:
+    if drug_data[3]: # prefer INN
         drug_name_source = 3
-    elif drug_data[1]:
-        drug_name_source = 0
-    elif drug_data[0]:
-        drug_name_source = 2
-    elif drug_data[2]:
-        drug_name_source = 4
-    elif drug_data[4]:
-        drug_name_source = 6
-    elif drug_data[6]:
+    elif drug_data[1]: # product name
         drug_name_source = 1
-    elif drug_data[7]:
+    elif drug_data[0]: # trade name
+        drug_name_source = 0
+    elif drug_data[2]: # product code
+        drug_name_source = 2
+    elif drug_data[4]: # CAS number
+        drug_name_source = 4
+    elif drug_data[6]: # EV substance code
+        drug_name_source = 6
+    elif drug_data[7]: # alternative names
         drug_name_source = 7
     else:
-        drug_name_source = 5
+        drug_name_source = 5 # sponsor code
     drug_list.append(drug_terms[drug_name_source] + ":" + drug_data[drug_name_source])
 drug_entry = "; ".join(drug_list)
 cursor.execute("SELECT {} FROM location WHERE eudract = \"{}\"".format(location_term_string, trial_selected))
 rows = cursor.fetchall()
 location_entry = ", ".join(flatten(rows))
 cursor.execute("SELECT {} FROM sponsor WHERE eudract = \"{}\"".format(sponsor_term_string, trial_selected))
-sponsor_entry = cursor.fetchone()[0]
+sponsor_entry = cursor.fetchone()[0] # sponsor name
 trial_data.append(drug_entry)
 trial_data.append(location_entry)
 trial_data.append(sponsor_entry)
