@@ -605,8 +605,7 @@ drug_list = []
 sponsor_set = set()
 location_set = set()
 
-# source_file = "EUCTReg20210803.txt"
-source_file = "test2000x.txt"
+source_file = "EUCTReg20210803.txt"
 database_name = input("Name of database to write? > ")
 start_time = time.time()
 create_databases(database_name)
