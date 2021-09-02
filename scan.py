@@ -198,7 +198,6 @@ def drug_fields_match(okptr: str, currptr: str) -> bool:
 def update_drug(db, list_of_drugs):
     """
     Write the drug data for a given trial to the database.
-    Caveat: This function does not capture more than one active substance per drug.
     :return:
     """
     # Sort through drug entries, possibly representing one or several drugs in the trial to
@@ -214,11 +213,7 @@ def update_drug(db, list_of_drugs):
                 # does any drug field match? Try all except the ALT field ? If so, combine
                 if drug_fields_match(list_of_drugs[ok_ptr][0], list_of_drugs[current_ptr][0]) \
                   or drug_fields_match(list_of_drugs[ok_ptr][1], list_of_drugs[current_ptr][1]) \
-                  or drug_fields_match(list_of_drugs[ok_ptr][2], list_of_drugs[current_ptr][2]) \
-                  or drug_fields_match(list_of_drugs[ok_ptr][3], list_of_drugs[current_ptr][3]) \
-                  or drug_fields_match(list_of_drugs[ok_ptr][4], list_of_drugs[current_ptr][4]) \
-                  or drug_fields_match(list_of_drugs[ok_ptr][5], list_of_drugs[current_ptr][5]) \
-                  or drug_fields_match(list_of_drugs[ok_ptr][6], list_of_drugs[current_ptr][6]):
+                  or drug_fields_match(list_of_drugs[ok_ptr][2], list_of_drugs[current_ptr][2]):
 
                     # Take the shorter of the Trade names:
                     if len(list_of_drugs[ok_ptr][0]) > len(list_of_drugs[current_ptr][0]) > 0:
@@ -242,17 +237,12 @@ def update_drug(db, list_of_drugs):
     list_of_drugs = list_of_drugs[:top_ptr]
     add_drug_stmt = """INSERT INTO drug(eudract, {}) 
                     VALUES({})"""
-    for (trade, product, code, inn, cas, sponsor_code, alt_name, ev_substance) in list_of_drugs:
+    for (trade, product, code) in list_of_drugs:
         db.execute(add_drug_stmt.format(", \n".join([x[FIELD_NAME] for x in drug]), ",".join("?" * (len(drug) + 1))),
                    (trial[0][FIELD_VAL],
                     trade,
                     product,
-                    code,
-                    inn,
-                    cas,
-                    sponsor_code,
-                    ev_substance,
-                    alt_name))  # This order is intentional, want alt listed last in db
+                    code))
 
 
 def update_sponsor(db):
@@ -292,11 +282,6 @@ def add_drug_to_list():
     drug_list.append([drug[0][FIELD_VAL].casefold(),    # Trade
                       drug[1][FIELD_VAL].casefold(),    # Product
                       drug[2][FIELD_VAL].casefold(),    # Code
-                      drug[3][FIELD_VAL].casefold(),    # INN
-                      drug[4][FIELD_VAL],               # CAS
-                      drug[5][FIELD_VAL].casefold(),    # Current Sponsor Code
-                      drug[6][FIELD_VAL].upper(),       # EV Substance
-                      drug[7][FIELD_VAL].casefold()     # ALT
                       ])
 
 
@@ -524,11 +509,6 @@ imp_no_re = re.compile(r"D.IMP: \d+")  # do not capture - IMP numbering varies b
 imp_trade_name_re = re.compile("^D.2.1.1.1 Trade name: (.*$)")
 imp_name_re = re.compile("^D.3.1 Product name: (.*$)")
 imp_code_re = re.compile("^D.3.2 Product code: (.*$)")
-imp_inn_re = re.compile("^D.3.8 INN - Proposed INN: (.*$)")
-imp_cas_re = re.compile(r"^D.3.9.1 CAS number:\s+(\d{2,7}-\d{2}-\d)")
-imp_sponsor_code = re.compile("D.3.9.2 Current sponsor code: (.*$)")
-imp_alt_names_re = re.compile("^D.3.9.3 Other descriptive name: (.*$)")
-imp_ev_substance_re = re.compile("^D.3.9.4 EV Substance Code: (.*$)")
 
 # Compile regexps related to trial sponsor
 sponsor_name_re = re.compile("^B.1.1 Name of Sponsor: (.*$)")
@@ -593,12 +573,7 @@ trial = [["eudract", "TEXT NOT NULL PRIMARY KEY", "", trial_eudract_re],
 # List of unique elements to extract to the Drug table for each trial
 drug = [["trade", "TEXT NOT NULL", "", imp_trade_name_re],
         ["product", "TEXT NOT NULL", "", imp_name_re],
-        ["code", "TEXT NOT NULL", "", imp_code_re],
-        ["inn", "TEXT NOT NULL", "", imp_inn_re],
-        ["cas", "TEXT NOT NULL", "", imp_cas_re, ""],
-        ["sponsor_code", "TEXT NOT NULL", "", imp_sponsor_code],
-        ["ev_substance", "TEXT NOT NULL", "", imp_ev_substance_re],
-        ["alt_names", "TEXT NOT NULL", "", imp_alt_names_re]]
+        ["code", "TEXT NOT NULL", "", imp_code_re]]
 
 # List of unique elements to extract to the Sponsor table for each trial
 sponsor = [["name", "TEXT NOT NULL", "", sponsor_name_re],
@@ -611,7 +586,7 @@ drug_list = []
 sponsor_set = set()
 location_set = set()
 
-source_file = "EUCTReg20210803.txt"
+source_file = "test2000x.txt"
 database_name = input("Name of database to write? > ")
 start_time = time.time()
 create_databases(database_name)
