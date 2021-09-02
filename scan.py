@@ -137,45 +137,49 @@ def update_trial(db) -> None:
                    trial[2][FIELD_VAL],                 # status
                    trial[3][FIELD_VAL],                 # db_date
                    trial[4][FIELD_VAL],                 # title
-                   trial[5][FIELD_VAL],                 # nct
-                   y_n_to_int(trial[6][FIELD_VAL]),     # placebo
-                   trial[7][FIELD_VAL],                 # condition
-                   trial[8][FIELD_VAL],                 # meddra_version
-                   trial[9][FIELD_VAL],                 # meddra_level
-                   trial[10][FIELD_VAL],                # meddra_classification
-                   trial[11][FIELD_VAL],                # meddra_term
-                   trial[12][FIELD_VAL],                # meddra_soc
-                   y_n_to_int(trial[13][FIELD_VAL]),    # rare
-                   y_n_to_int(trial[14][FIELD_VAL]),    # fih
-                   y_n_to_int(trial[15][FIELD_VAL]),    # bioequivalence
-                   y_n_to_int(trial[16][FIELD_VAL]),    # phase1
-                   y_n_to_int(trial[17][FIELD_VAL]),    # phase2
-                   y_n_to_int(trial[18][FIELD_VAL]),    # phase3
-                   y_n_to_int(trial[19][FIELD_VAL]),    # phase4
-                   y_n_to_int(trial[20][FIELD_VAL]),    # diagnosis
-                   y_n_to_int(trial[21][FIELD_VAL]),    # prophylaxis
-                   y_n_to_int(trial[22][FIELD_VAL]),    # therapy
-                   y_n_to_int(trial[23][FIELD_VAL]),    # safety
-                   y_n_to_int(trial[24][FIELD_VAL]),    # efficacy
-                   y_n_to_int(trial[25][FIELD_VAL]),    # pk
-                   y_n_to_int(trial[26][FIELD_VAL]),    # pd
-                   y_n_to_int(trial[27][FIELD_VAL]),    # randomised
-                   y_n_to_int(trial[28][FIELD_VAL]),    # open_design
-                   y_n_to_int(trial[29][FIELD_VAL]),    # single_blind
-                   y_n_to_int(trial[30][FIELD_VAL]),    # double_blind
-                   y_n_to_int(trial[31][FIELD_VAL]),    # crossover
-                   y_n_to_int(trial[32][FIELD_VAL]),    # age_in_utero
-                   y_n_to_int(trial[33][FIELD_VAL]),    # age_preterm
-                   y_n_to_int(trial[34][FIELD_VAL]),    # age_newborn
-                   y_n_to_int(trial[35][FIELD_VAL]),    # age_under2
-                   y_n_to_int(trial[36][FIELD_VAL]),    # age_2to11
-                   y_n_to_int(trial[37][FIELD_VAL]),    # age_12to17
-                   y_n_to_int(trial[38][FIELD_VAL]),    # age_18to64
-                   y_n_to_int(trial[39][FIELD_VAL]),    # age_65plus
-                   y_n_to_int(trial[40][FIELD_VAL]),    # female
-                   y_n_to_int(trial[41][FIELD_VAL]),    # male
-                   trial[42][FIELD_VAL],                # network
-                   trial[43][FIELD_VAL]                 # eot_date
+                   trial[5][FIELD_VAL],                 # sponsor_protocol
+                   trial[6][FIELD_VAL],                 # isrctn
+                   trial[7][FIELD_VAL],                 # who_utrn
+                   trial[8][FIELD_VAL],                 # nct
+                   y_n_to_int(trial[9][FIELD_VAL]),     # placebo
+                   trial[10][FIELD_VAL],                # condition
+                   trial[11][FIELD_VAL],                # meddra_version
+                   trial[12][FIELD_VAL],                # meddra_level
+                   trial[13][FIELD_VAL],                # meddra_classification
+                   trial[14][FIELD_VAL],                # meddra_term
+                   trial[15][FIELD_VAL],                # meddra_soc
+                   y_n_to_int(trial[16][FIELD_VAL]),    # rare
+                   y_n_to_int(trial[17][FIELD_VAL]),    # fih
+                   y_n_to_int(trial[18][FIELD_VAL]),    # bioequivalence
+                   y_n_to_int(trial[19][FIELD_VAL]),    # phase1
+                   y_n_to_int(trial[20][FIELD_VAL]),    # phase2
+                   y_n_to_int(trial[21][FIELD_VAL]),    # phase3
+                   y_n_to_int(trial[22][FIELD_VAL]),    # phase4
+                   y_n_to_int(trial[23][FIELD_VAL]),    # diagnosis
+                   y_n_to_int(trial[24][FIELD_VAL]),    # prophylaxis
+                   y_n_to_int(trial[25][FIELD_VAL]),    # therapy
+                   y_n_to_int(trial[26][FIELD_VAL]),    # safety
+                   y_n_to_int(trial[27][FIELD_VAL]),    # efficacy
+                   y_n_to_int(trial[28][FIELD_VAL]),    # pk
+                   y_n_to_int(trial[29][FIELD_VAL]),    # pd
+                   y_n_to_int(trial[30][FIELD_VAL]),    # randomised
+                   y_n_to_int(trial[31][FIELD_VAL]),    # open_design
+                   y_n_to_int(trial[32][FIELD_VAL]),    # single_blind
+                   y_n_to_int(trial[33][FIELD_VAL]),    # double_blind
+                   y_n_to_int(trial[34][FIELD_VAL]),    # crossover
+                   y_n_to_int(trial[35][FIELD_VAL]),    # age_in_utero
+                   y_n_to_int(trial[36][FIELD_VAL]),    # age_preterm
+                   y_n_to_int(trial[37][FIELD_VAL]),    # age_newborn
+                   y_n_to_int(trial[38][FIELD_VAL]),    # age_under2
+                   y_n_to_int(trial[39][FIELD_VAL]),    # age_2to11
+                   y_n_to_int(trial[40][FIELD_VAL]),    # age_12to17
+                   y_n_to_int(trial[41][FIELD_VAL]),    # age_18to64
+                   y_n_to_int(trial[42][FIELD_VAL]),    # age_65plus
+                   y_n_to_int(trial[43][FIELD_VAL]),    # female
+                   y_n_to_int(trial[44][FIELD_VAL]),    # male
+                   trial[45][FIELD_VAL],                # n
+                   trial[46][FIELD_VAL],                # network
+                   trial[47][FIELD_VAL]                 # eot_date
                    ))
     except sqlite3.IntegrityError:
         print("Database integrity error, likely duplicate Eudract number for study {}"
@@ -516,7 +520,6 @@ sponsor_org_re = re.compile("^B.5.1 Name of organisation: (.*$)")
 sponsor_contact_re = re.compile("^B.5.2 Functional name of contact point: (.*$)")
 sponsor_email_re = re.compile(r"^B.5.6 E-mail:\s*(\S+@\S+[.]\S+)\s*$")
 
-
 # Compile regexps related to trial location
 location_re = re.compile(r"^National Competent Authority:\s+(\S*)\s+[-]")
 location_list_start_re = re.compile("^E.8.6.3 If E.8.6.1 or E.8.6.2 are Yes")
@@ -530,6 +533,9 @@ trial = [["eudract", "TEXT NOT NULL PRIMARY KEY", "", trial_eudract_re],
          ["status", "TEXT NOT NULL", "", trial_status_re],
          ["db_date", "TEXT NOT NULL", "", trial_db_date_re],
          ["title", "TEXT NOT NULL", "", trial_title_re],
+         ["sponsor_protocol", "TEXT NOT NULL", "", trial_sponsor_protocol_re],
+         ["isrctn", "TEXT NOT NULL", "", trial_isrctn_re],
+         ["who_utrn", "TEXT NOT NULL", "", trial_who_utrn_re],
          ["nct", "TEXT NOT NULL", "", trial_NCT_re],
          ["placebo", "INTEGER NOT NULL", "", trial_placebo_re],
          ["condition", "TEXT NOT NULL", "", trial_condition_re],
@@ -567,6 +573,7 @@ trial = [["eudract", "TEXT NOT NULL PRIMARY KEY", "", trial_eudract_re],
          ["age_65plus", "INTEGER NOT NULL", "", trial_age_65plus_re],
          ["female", "INTEGER NOT NULL", "", trial_female_re],
          ["male", "INTEGER NOT NULL", "", trial_male_re],
+         ["n", "TEXT NOT NULL", "", trial_n_re],
          ["network", "TEXT NOT NULL", "", trial_network_name_re],
          ["eot_date", "TEXT NOT NULL", "", trial_end_of_trial_date_re]]
 
