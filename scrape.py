@@ -52,7 +52,6 @@ filespec = time.strftime("%Y%m%d-%H%M")
 print("Executing")
 
 for line in access_page(HOW_MANY_PAGES_URL).text.splitlines():
-    # print("*", line)
     m = max_re.match(line)
     if m:
         top_page = int("".join(m.group(1).split(","))) + 1
@@ -61,7 +60,6 @@ for line in access_page(HOW_MANY_PAGES_URL).text.splitlines():
 if top_page == 1:
     raise Exception("Unable to determine last page of site to crawl.")
 
-top_page = 5
 with open(filespec, "w") as test_file:
     for page_number in range(1, top_page):
         print("Accessing page {}".format(page_number))
