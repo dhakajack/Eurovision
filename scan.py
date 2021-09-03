@@ -454,139 +454,85 @@ def parse_listing(infile: str, outfile: str):
         update_databases(outfile)
 
 
-# Compile some regexps at initialization rather than access the supermethod "live"
-# within a loop, which would be more expensive computationally
+class Element:
 
-# Compile regexps related to trial elements
-trial_eudract_re = re.compile(r"^EudraCT Number:\s*(\S+)")
-trial_sponsor_code_re = re.compile("^Sponsor's Protocol Code Number: (.*$)")
-trial_status_re = re.compile("^Trial Status: (.*$)")
-trial_db_date_re = re.compile("^Date on which this record was first entered in the EudraCT database: (.*$)")
-trial_title_re = re.compile("^A.3 Full title of the trial: (.*$)")
-trial_sponsor_protocol_re = re.compile("^A.4.1 Sponsor's protocol code number: (.*$)")
-trial_isrctn_re = re.compile(r"^A.5.1 ISRCTN \(International Standard Randomised Controlled Trial\) number: (.*$)")
-trial_who_utrn_re = re.compile(r"^A.5.3 WHO Universal Trial Reference Number \(UTRN\): (.*$)")
-trial_NCT_re = re.compile(r"^A.5.2 US NCT \(ClinicalTrials.gov registry\) number: (NCT\d+)")
-trial_placebo_re = re.compile(r"D.8.1 Is a Placebo used in this Trial\? (.*$)")
-trial_condition_re = re.compile(r"^E.1.1 Medical condition\(s\) being investigated: (.*$)")
-trial_MedDRA_version_re = re.compile("^E.1.2 Version: ([0-9.]+)")
-trial_MedDRA_level_re = re.compile("^E.1.2 Level: (.*$)")
-trial_MedDRA_classification_re = re.compile(r"^E.1.2 Classification code: (\d+)")
-trial_MedDRA_term_re = re.compile("^E.1.2 Term: (.*$)")
-trial_MedDRA_SOC_re = re.compile(r"^E.1.2 System Organ Class: (\d+)")
-trial_rare_re = re.compile("^E.1.3 Condition being studied is a rare disease: (.*$)")
-trial_fih_re = re.compile("^E.7.1.1 First administration to humans: (.*$)")
-trial_bioequivalence_re = re.compile("^E.7.1.2 Bioequivalence study: (.*$)")
-trial_phase1_re = re.compile(r"^E.7.1 Human pharmacology \(Phase I\): (.*$)")
-trial_phase2_re = re.compile(r"^E.7.2 Therapeutic exploratory \(Phase II\): (.*$)")
-trial_phase3_re = re.compile(r"^E.7.3 Therapeutic confirmatory \(Phase III\): (.*$)")
-trial_phase4_re = re.compile(r"^E.7.4 Therapeutic use \(Phase IV\): (.*$)")
-trial_scope_diagnosis_re = re.compile("^E.6.1 Diagnosis: (.*$)")
-trial_scope_prophylaxis_re = re.compile("^E.6.2 Prophylaxis: (.*$)")
-trial_scope_therapy_re = re.compile("^E.6.3 Therapy: (.*$)")
-trial_scope_safety_re = re.compile("^E.6.4 Safety: (.*$)")
-trial_scope_efficacy_re = re.compile("^E.6.5 Efficacy: (.*$)")
-trial_scope_PK_re = re.compile("^E.6.6 Pharmacokinetic: (.*$)")
-trial_scope_PD_re = re.compile("^E.6.7 Pharmacodynamic: (.*$)")
-trial_scope_randomised_re = re.compile("^E.8.1.1 Randomised: (.*$)")
-trial_scope_open_re = re.compile("^E.8.1.2 Open: (.*$)")
-trial_scope_single_blind_re = re.compile("^E.8.1.3 Single blind: (.*$)")
-trial_scope_double_blind_re = re.compile("^E.8.1.4 Double blind: (.*$)")
-trial_scope_crossover_re = re.compile("^E.8.1.6 Cross over: (.*$)")
-trial_age_in_utero_re = re.compile("^F.1.1.1 In Utero: (.*$)")
-trial_age_preterm_re = re.compile(r"^F.1.1.2 Preterm newborn infants \(up to gestational age < 37 weeks\): (.*$)")
-trial_age_newborn_re = re.compile(r"^F.1.1.3 Newborns \(0-27 days\): (.*$)")
-trial_age_under2_re = re.compile(r"^F.1.1.4 Infants and toddlers \(28 days-23 months\): (.*$)")
-trial_age_2to11_re = re.compile(r"^F.1.1.5 Children \(2-11years\): (.*$)")
-trial_age_12to17_re = re.compile(r"^F.1.1.6 Adolescents \(12-17 years\): (.*$)")
-trial_age_18to64_re = re.compile(r"^F.1.2 Adults \(18-64 years\): (.*$)")
-trial_age_65plus_re = re.compile(r"^F.1.3 Elderly \(>=65 years\): (.*$)")
-trial_female_re = re.compile("^F.2.1 Female: (.*$)")
-trial_male_re = re.compile("^F.2.2 Male: (.*$)")
-trial_n_re = re.compile("^F.4.2.2 In the whole clinical trial: (.*$)")
-trial_network_name_re = re.compile("^G.4.1 Name of Organisation: (.*$)")
-trial_end_of_trial_status_re = re.compile("^P. End of Trial Status: (.*$)")
-trial_end_of_trial_date_re = re.compile("^P. Date of the global end of the trial: (.*$)")
+    def __init__(self, field_type, regexpdef):
+        self.field_type = field_type
+        self.regexpdef = regexpdef
+        self.value = ""
 
-# Compile regexps related to trial IMP(s)
+# Trial table definitions
+trial2 = {"eudract": Element("TEXT NOT NULL PRIMARY KEY", re.compile(r"^EudraCT Number:\s*(\S+)")),
+          "sponsor_code": Element("TEXT NOT NULL", re.compile("^Sponsor's Protocol Code Number: (.*$)")),
+          "status": Element("TEXT NOT NULL", re.compile("^Trial Status: (.*$)")),
+          "db_date": Element("TEXT NOT NULL", re.compile("^Date on which this record was first entered in the EudraCT database: (.*$)")),
+          "title": Element("TEXT NOT NULL", re.compile("^A.3 Full title of the trial: (.*$)")),
+          "sponsor_protocol": Element("TEXT NOT NULL", re.compile("^A.4.1 Sponsor's protocol code number: (.*$)")),
+          "isrctn": Element("TEXT NOT NULL", re.compile(r"^A.5.1 ISRCTN \(International Standard Randomised Controlled Trial\) number: (.*$)")),
+          "who_utrn": Element("TEXT NOT NULL", re.compile(r"^A.5.3 WHO Universal Trial Reference Number \(UTRN\): (.*$)")),
+          "nct": Element("TEXT NOT NULL", re.compile(r"^A.5.2 US NCT \(ClinicalTrials.gov registry\) number: (NCT\d+)")),
+          "placebo": Element("INTEGER NOT NULL", re.compile(r"D.8.1 Is a Placebo used in this Trial\? (.*$)")),
+          "condition": Element("TEXT NOT NULL", re.compile(r"^E.1.1 Medical condition\(s\) being investigated: (.*$)")  ),
+          "meddra_version": Element("TEXT NOT NULL", re.compile("^E.1.2 Version: ([0-9.]+)")),
+          "meddra_level": Element("TEXT NOT NULL", re.compile("^E.1.2 Level: (.*$)")),
+          "meddra_classification": Element("TEXT NOT NULL", re.compile(r"^E.1.2 Classification code: (\d+)")),
+          "meddra_term": Element("TEXT NOT NULL", re.compile("^E.1.2 Term: (.*$)")),
+          "meddra_soc": Element("TEXT NOT NULL", re.compile(r"^E.1.2 System Organ Class: (\d+)")),
+          "rare": Element("INTEGER NOT NULL", re.compile("^E.1.3 Condition being studied is a rare disease: (.*$)")),
+          "fih": Element("INTEGER NOT NULL", re.compile("^E.7.1.1 First administration to humans: (.*$)")),
+          "bioequivalence": Element("INTEGER NOT NULL", re.compile("^E.7.1.2 Bioequivalence study: (.*$)")),
+          "phase1": Element("INTEGER NOT NULL", re.compile(r"^E.7.1 Human pharmacology \(Phase I\): (.*$)")),
+          "phase2": Element("INTEGER NOT NULL", re.compile(r"^E.7.2 Therapeutic exploratory \(Phase II\): (.*$)")),
+          "phase3": Element("INTEGER NOT NULL", re.compile(r"^E.7.3 Therapeutic confirmatory \(Phase III\): (.*$)")),
+          "phase4": Element("INTEGER NOT NULL", re.compile(r"^E.7.4 Therapeutic use \(Phase IV\): (.*$)")),
+          "diagnosis": Element("INTEGER NOT NULL", re.compile("^E.6.1 Diagnosis: (.*$)")),
+          "prophylaxis": Element("INTEGER NOT NULL", re.compile("^E.6.2 Prophylaxis: (.*$)")),
+          "therapy": Element("INTEGER NOT NULL", re.compile("^E.6.3 Therapy: (.*$)")),
+          "safety": Element("INTEGER NOT NULL", re.compile("^E.6.4 Safety: (.*$)")),
+          "efficacy": Element("INTEGER NOT NULL", re.compile("^E.6.5 Efficacy: (.*$)")),
+          "pk": Element("INTEGER NOT NULL", re.compile("^E.6.6 Pharmacokinetic: (.*$)")),
+          "pd": Element("INTEGER NOT NULL", re.compile("^E.6.7 Pharmacodynamic: (.*$)")),
+          "randomised": Element("INTEGER NOT NULL", re.compile("^E.8.1.1 Randomised: (.*$)")),\
+          "open_design": Element("INTEGER NOT NULL", re.compile("^E.8.1.2 Open: (.*$)")),
+          "single_blind": Element("INTEGER NOT NULL", re.compile("^E.8.1.3 Single blind: (.*$)")),
+          "double_blind": Element("INTEGER NOT NULL", re.compile("^E.8.1.4 Double blind: (.*$)")),
+          "crossover": Element("INTEGER NOT NULL", re.compile("^E.8.1.6 Cross over: (.*$)")),
+          "age_in_utero": Element("INTEGER NOT NULL", re.compile("^F.1.1.1 In Utero: (.*$)")),
+          "age_preterm": Element("INTEGER NOT NULL", re.compile(r"^F.1.1.2 Preterm newborn infants \(up to gestational age < 37 weeks\): (.*$)")),
+          "age_newborn": Element("INTEGER NOT NULL", re.compile(r"^F.1.1.3 Newborns \(0-27 days\): (.*$)")),
+          "age_under2": Element("INTEGER NOT NULL", re.compile(r"^F.1.1.4 Infants and toddlers \(28 days-23 months\): (.*$)")),
+          "age_2to11": Element("INTEGER NOT NULL", re.compile(r"^F.1.1.5 Children \(2-11years\): (.*$)")),
+          "age12to17": Element("INTEGER NOT NULL", re.compile(r"^F.1.1.6 Adolescents \(12-17 years\): (.*$)")),
+          "age18to64": Element("INTEGER NOT NULL", re.compile(r"^F.1.2 Adults \(18-64 years\): (.*$)")),
+          "age_65plus": Element("INTEGER NOT NULL", re.compile(r"^F.1.3 Elderly \(>=65 years\): (.*$)")),
+          "female": Element("INTEGER NOT NULL", re.compile("^F.2.1 Female: (.*$)")),
+          "male": Element("INTEGER NOT NULL", re.compile("^F.2.2 Male: (.*$)")),
+          "n": Element("TEXT NOT NULL", re.compile("^F.4.2.2 In the whole clinical trial: (.*$)")),
+          "network": Element("TEXT NOT NULL", re.compile("^G.4.1 Name of Organisation: (.*$)")),
+          "eot_date": Element("TEXT NOT NULL", re.compile("^P. Date of the global end of the trial: (.*$)"))
+          }
+
+# Drug table definitions
+drug = {"trade": Element("TEXT NOT NULL", re.compile("^D.2.1.1.1 Trade name: (.*$)")),
+        "product": Element("TEXT NOT NULL", re.compile("^D.3.1 Product name: (.*$)")),
+        "code": Element("TEXT NOT NULL", re.compile("^D.3.2 Product code: (.*$)"))
+        }
+
+# Sponsor table definitions
+sponsor = {"name": Element("TEXT NOT NULL", re.compile("^B.1.1 Name of Sponsor: (.*$)")),
+           "org": Element("TEXT NOT NULL", re.compile("^B.5.1 Name of organisation: (.*$)")),
+           "contact": Element("TEXT NOT NULL", re.compile("^B.5.2 Functional name of contact point: (.*$)")),
+           "email": Element("TEXT NOT NULL", re.compile(r"^B.5.6 E-mail:\s*(\S+@\S+[.]\S+)\s*$"))
+        }
+
+# Other regexp definitions for precompiling:
 imp_no_re = re.compile(r"D.IMP: \d+")  # do not capture - IMP numbering varies between MS records
-imp_trade_name_re = re.compile("^D.2.1.1.1 Trade name: (.*$)")
-imp_name_re = re.compile("^D.3.1 Product name: (.*$)")
-imp_code_re = re.compile("^D.3.2 Product code: (.*$)")
-
-# Compile regexps related to trial sponsor
-sponsor_name_re = re.compile("^B.1.1 Name of Sponsor: (.*$)")
-sponsor_org_re = re.compile("^B.5.1 Name of organisation: (.*$)")
-sponsor_contact_re = re.compile("^B.5.2 Functional name of contact point: (.*$)")
-sponsor_email_re = re.compile(r"^B.5.6 E-mail:\s*(\S+@\S+[.]\S+)\s*$")
-
-# Compile regexps related to trial location
 location_re = re.compile(r"^National Competent Authority:\s+(\S*)\s+[-]")
 location_list_start_re = re.compile("^E.8.6.3 If E.8.6.1 or E.8.6.2 are Yes")
 location_list_end_re = re.compile("^E.8.7 Trial has a data monitoring committee")
 location_list_other_start_re = re.compile("^E.8.6.3 Specify the countries outside of the EEA")
 location_list_other_end_re = re.compile("^E.8.7 Trial has a data monitoring committee:")
 
-# List of unique elements to extract to the Trial table for each trial
-trial = [["eudract", "TEXT NOT NULL PRIMARY KEY", "", trial_eudract_re],
-         ["sponsor_code", "TEXT NOT NULL", "", trial_sponsor_code_re],
-         ["status", "TEXT NOT NULL", "", trial_status_re],
-         ["db_date", "TEXT NOT NULL", "", trial_db_date_re],
-         ["title", "TEXT NOT NULL", "", trial_title_re],
-         ["sponsor_protocol", "TEXT NOT NULL", "", trial_sponsor_protocol_re],
-         ["isrctn", "TEXT NOT NULL", "", trial_isrctn_re],
-         ["who_utrn", "TEXT NOT NULL", "", trial_who_utrn_re],
-         ["nct", "TEXT NOT NULL", "", trial_NCT_re],
-         ["placebo", "INTEGER NOT NULL", "", trial_placebo_re],
-         ["condition", "TEXT NOT NULL", "", trial_condition_re],
-         ["meddra_version", "TEXT NOT NULL", "", trial_MedDRA_version_re],
-         ["meddra_level", "TEXT NOT NULL", "", trial_MedDRA_level_re],
-         ["meddra_classification", "TEXT NOT NULL", "", trial_MedDRA_classification_re],
-         ["meddra_term", "TEXT NOT NULL", "", trial_MedDRA_term_re],
-         ["meddra_soc", "TEXT NOT NULL", "", trial_MedDRA_SOC_re],
-         ["rare", "INTEGER NOT NULL", "", trial_rare_re],
-         ["fih", "INTEGER NOT NULL", "", trial_fih_re],
-         ["bioequivalence", "INTEGER NOT NULL", "", trial_bioequivalence_re],
-         ["phase1", "INTEGER NOT NULL", "", trial_phase1_re],
-         ["phase2", "INTEGER NOT NULL", "", trial_phase2_re],
-         ["phase3", "INTEGER NOT NULL", "", trial_phase3_re],
-         ["phase4", "INTEGER NOT NULL", "", trial_phase4_re],
-         ["diagnosis", "INTEGER NOT NULL", "", trial_scope_diagnosis_re],
-         ["prophylaxis", "INTEGER NOT NULL", "", trial_scope_prophylaxis_re],
-         ["therapy", "INTEGER NOT NULL", "", trial_scope_therapy_re],
-         ["safety", "INTEGER NOT NULL", "", trial_scope_safety_re],
-         ["efficacy", "INTEGER NOT NULL", "", trial_scope_efficacy_re],
-         ["pk", "INTEGER NOT NULL", "", trial_scope_PK_re],
-         ["pd", "INTEGER NOT NULL", "", trial_scope_PD_re],
-         ["randomised", "INTEGER NOT NULL", "", trial_scope_randomised_re],
-         ["open_design", "INTEGER NOT NULL", "", trial_scope_open_re],
-         ["single_blind", "INTEGER NOT NULL", "", trial_scope_single_blind_re],
-         ["double_blind", "INTEGER NOT NULL", "", trial_scope_double_blind_re],
-         ["crossover", "INTEGER NOT NULL", "", trial_scope_crossover_re],
-         ["age_in_utero", "INTEGER NOT NULL", "", trial_age_in_utero_re],
-         ["age_preterm", "INTEGER NOT NULL", "", trial_age_preterm_re],
-         ["age_newborn", "INTEGER NOT NULL", "", trial_age_newborn_re],
-         ["age_under2", "INTEGER NOT NULL", "", trial_age_under2_re],
-         ["age_2to11", "INTEGER NOT NULL", "", trial_age_2to11_re],
-         ["age12to17", "INTEGER NOT NULL", "", trial_age_12to17_re],
-         ["age18to64", "INTEGER NOT NULL", "", trial_age_18to64_re],
-         ["age_65plus", "INTEGER NOT NULL", "", trial_age_65plus_re],
-         ["female", "INTEGER NOT NULL", "", trial_female_re],
-         ["male", "INTEGER NOT NULL", "", trial_male_re],
-         ["n", "TEXT NOT NULL", "", trial_n_re],
-         ["network", "TEXT NOT NULL", "", trial_network_name_re],
-         ["eot_date", "TEXT NOT NULL", "", trial_end_of_trial_date_re]]
-
-# List of unique elements to extract to the Drug table for each trial
-drug = [["trade", "TEXT NOT NULL", "", imp_trade_name_re],
-        ["product", "TEXT NOT NULL", "", imp_name_re],
-        ["code", "TEXT NOT NULL", "", imp_code_re]]
-
-# List of unique elements to extract to the Sponsor table for each trial
-sponsor = [["name", "TEXT NOT NULL", "", sponsor_name_re],
-           ["org", "TEXT NOT NULL", "", sponsor_org_re],
-           ["contact", "TEXT NOT NULL", "", sponsor_contact_re],
-           ["email", "TEXT NOT NULL", "", sponsor_email_re]]
 
 # Sets are used for sponsor and location to consolidate repeating data
 drug_list = []
@@ -599,3 +545,120 @@ start_time = time.time()
 create_databases(database_name)
 parse_listing(source_file, database_name)
 print("Run time: {}".format(time.time() - start_time))
+
+
+
+
+
+# # Compile regexps related to trial elements
+# trial_eudract_re = re.compile(r"^EudraCT Number:\s*(\S+)")
+# trial_sponsor_code_re = re.compile("^Sponsor's Protocol Code Number: (.*$)")
+# trial_status_re = re.compile("^Trial Status: (.*$)")
+# trial_db_date_re = re.compile("^Date on which this record was first entered in the EudraCT database: (.*$)")
+# trial_title_re = re.compile("^A.3 Full title of the trial: (.*$)")
+# trial_sponsor_protocol_re = re.compile("^A.4.1 Sponsor's protocol code number: (.*$)")
+# trial_isrctn_re = re.compile(r"^A.5.1 ISRCTN \(International Standard Randomised Controlled Trial\) number: (.*$)")
+# trial_who_utrn_re = re.compile(r"^A.5.3 WHO Universal Trial Reference Number \(UTRN\): (.*$)")
+# trial_NCT_re = re.compile(r"^A.5.2 US NCT \(ClinicalTrials.gov registry\) number: (NCT\d+)")
+# trial_placebo_re = re.compile(r"D.8.1 Is a Placebo used in this Trial\? (.*$)")
+# trial_condition_re = re.compile(r"^E.1.1 Medical condition\(s\) being investigated: (.*$)")
+# trial_MedDRA_version_re = re.compile("^E.1.2 Version: ([0-9.]+)")
+# trial_MedDRA_level_re = re.compile("^E.1.2 Level: (.*$)")
+# trial_MedDRA_classification_re = re.compile(r"^E.1.2 Classification code: (\d+)")
+# trial_MedDRA_term_re = re.compile("^E.1.2 Term: (.*$)")
+# trial_MedDRA_SOC_re = re.compile(r"^E.1.2 System Organ Class: (\d+)")
+# trial_rare_re = re.compile("^E.1.3 Condition being studied is a rare disease: (.*$)")
+# trial_fih_re = re.compile("^E.7.1.1 First administration to humans: (.*$)")
+# trial_bioequivalence_re = re.compile("^E.7.1.2 Bioequivalence study: (.*$)")
+# trial_phase1_re = re.compile(r"^E.7.1 Human pharmacology \(Phase I\): (.*$)")
+# trial_phase2_re = re.compile(r"^E.7.2 Therapeutic exploratory \(Phase II\): (.*$)")
+# trial_phase3_re = re.compile(r"^E.7.3 Therapeutic confirmatory \(Phase III\): (.*$)")
+# trial_phase4_re = re.compile(r"^E.7.4 Therapeutic use \(Phase IV\): (.*$)")
+# trial_scope_diagnosis_re = re.compile("^E.6.1 Diagnosis: (.*$)")
+# trial_scope_prophylaxis_re = re.compile("^E.6.2 Prophylaxis: (.*$)")
+# trial_scope_therapy_re = re.compile("^E.6.3 Therapy: (.*$)")
+# trial_scope_safety_re = re.compile("^E.6.4 Safety: (.*$)")
+# trial_scope_efficacy_re = re.compile("^E.6.5 Efficacy: (.*$)")
+# trial_scope_PK_re = re.compile("^E.6.6 Pharmacokinetic: (.*$)")
+# trial_scope_PD_re = re.compile("^E.6.7 Pharmacodynamic: (.*$)")
+# trial_scope_randomised_re = re.compile("^E.8.1.1 Randomised: (.*$)")
+# trial_scope_open_re = re.compile("^E.8.1.2 Open: (.*$)")
+# trial_scope_single_blind_re = re.compile("^E.8.1.3 Single blind: (.*$)")
+# trial_scope_double_blind_re = re.compile("^E.8.1.4 Double blind: (.*$)")
+# trial_scope_crossover_re = re.compile("^E.8.1.6 Cross over: (.*$)")
+# trial_age_in_utero_re = re.compile("^F.1.1.1 In Utero: (.*$)")
+# trial_age_preterm_re = re.compile(r"^F.1.1.2 Preterm newborn infants \(up to gestational age < 37 weeks\): (.*$)")
+# trial_age_newborn_re = re.compile(r"^F.1.1.3 Newborns \(0-27 days\): (.*$)")
+# trial_age_under2_re = re.compile(r"^F.1.1.4 Infants and toddlers \(28 days-23 months\): (.*$)")
+# trial_age_2to11_re = re.compile(r"^F.1.1.5 Children \(2-11years\): (.*$)")
+# trial_age_12to17_re = re.compile(r"^F.1.1.6 Adolescents \(12-17 years\): (.*$)")
+# trial_age_18to64_re = re.compile(r"^F.1.2 Adults \(18-64 years\): (.*$)")
+# trial_age_65plus_re = re.compile(r"^F.1.3 Elderly \(>=65 years\): (.*$)")
+# trial_female_re = re.compile("^F.2.1 Female: (.*$)")
+# trial_male_re = re.compile("^F.2.2 Male: (.*$)")
+# trial_n_re = re.compile("^F.4.2.2 In the whole clinical trial: (.*$)")
+# trial_network_name_re = re.compile("^G.4.1 Name of Organisation: (.*$)")
+# trial_end_of_trial_status_re = re.compile("^P. End of Trial Status: (.*$)")
+# trial_end_of_trial_date_re = re.compile("^P. Date of the global end of the trial: (.*$)")
+
+# # List of unique elements to extract to the Trial table for each trial
+# trial = [["eudract", "TEXT NOT NULL PRIMARY KEY", "", trial_eudract_re],
+#          ["sponsor_code", "TEXT NOT NULL", "", trial_sponsor_code_re],
+#          ["status", "TEXT NOT NULL", "", trial_status_re],
+#          ["db_date", "TEXT NOT NULL", "", trial_db_date_re],
+#          ["title", "TEXT NOT NULL", "", trial_title_re],
+#          ["sponsor_protocol", "TEXT NOT NULL", "", trial_sponsor_protocol_re],
+#          ["isrctn", "TEXT NOT NULL", "", trial_isrctn_re],
+#          ["who_utrn", "TEXT NOT NULL", "", trial_who_utrn_re],
+#          ["nct", "TEXT NOT NULL", "", trial_NCT_re],
+#          ["placebo", "INTEGER NOT NULL", "", trial_placebo_re],
+#          ["condition", "TEXT NOT NULL", "", trial_condition_re],
+#          ["meddra_version", "TEXT NOT NULL", "", trial_MedDRA_version_re],
+#          ["meddra_level", "TEXT NOT NULL", "", trial_MedDRA_level_re],
+#          ["meddra_classification", "TEXT NOT NULL", "", trial_MedDRA_classification_re],
+#          ["meddra_term", "TEXT NOT NULL", "", trial_MedDRA_term_re],
+#          ["meddra_soc", "TEXT NOT NULL", "", trial_MedDRA_SOC_re],
+#          ["rare", "INTEGER NOT NULL", "", trial_rare_re],
+#          ["fih", "INTEGER NOT NULL", "", trial_fih_re],
+#          ["bioequivalence", "INTEGER NOT NULL", "", trial_bioequivalence_re],
+#          ["phase1", "INTEGER NOT NULL", "", trial_phase1_re],
+#          ["phase2", "INTEGER NOT NULL", "", trial_phase2_re],
+#          ["phase3", "INTEGER NOT NULL", "", trial_phase3_re],
+#          ["phase4", "INTEGER NOT NULL", "", trial_phase4_re],
+#          ["diagnosis", "INTEGER NOT NULL", "", trial_scope_diagnosis_re],
+#          ["prophylaxis", "INTEGER NOT NULL", "", trial_scope_prophylaxis_re],
+#          ["therapy", "INTEGER NOT NULL", "", trial_scope_therapy_re],
+#          ["safety", "INTEGER NOT NULL", "", trial_scope_safety_re],
+#          ["efficacy", "INTEGER NOT NULL", "", trial_scope_efficacy_re],
+#          ["pk", "INTEGER NOT NULL", "", trial_scope_PK_re],
+#          ["pd", "INTEGER NOT NULL", "", trial_scope_PD_re],
+#          ["randomised", "INTEGER NOT NULL", "", trial_scope_randomised_re],
+#          ["open_design", "INTEGER NOT NULL", "", trial_scope_open_re],
+#          ["single_blind", "INTEGER NOT NULL", "", trial_scope_single_blind_re],
+#          ["double_blind", "INTEGER NOT NULL", "", trial_scope_double_blind_re],
+#          ["crossover", "INTEGER NOT NULL", "", trial_scope_crossover_re],
+#          ["age_in_utero", "INTEGER NOT NULL", "", trial_age_in_utero_re],
+#          ["age_preterm", "INTEGER NOT NULL", "", trial_age_preterm_re],
+#          ["age_newborn", "INTEGER NOT NULL", "", trial_age_newborn_re],
+#          ["age_under2", "INTEGER NOT NULL", "", trial_age_under2_re],
+#          ["age_2to11", "INTEGER NOT NULL", "", trial_age_2to11_re],
+#          ["age12to17", "INTEGER NOT NULL", "", trial_age_12to17_re],
+#          ["age18to64", "INTEGER NOT NULL", "", trial_age_18to64_re],
+#          ["age_65plus", "INTEGER NOT NULL", "", trial_age_65plus_re],
+#          ["female", "INTEGER NOT NULL", "", trial_female_re],
+#          ["male", "INTEGER NOT NULL", "", trial_male_re],
+#          ["n", "TEXT NOT NULL", "", trial_n_re],
+#          ["network", "TEXT NOT NULL", "", trial_network_name_re],
+#          ["eot_date", "TEXT NOT NULL", "", trial_end_of_trial_date_re]]
+
+# # Compile regexps related to trial IMP(s)
+# imp_no_re = re.compile(r"D.IMP: \d+")  # do not capture - IMP numbering varies between MS records
+# imp_trade_name_re = re.compile("^D.2.1.1.1 Trade name: (.*$)")
+# imp_name_re = re.compile("^D.3.1 Product name: (.*$)")
+# imp_code_re = re.compile("^D.3.2 Product code: (.*$)")
+#
+# # Compile regexps related to trial sponsor
+# sponsor_name_re = re.compile("^B.1.1 Name of Sponsor: (.*$)")
+# sponsor_org_re = re.compile("^B.5.1 Name of organisation: (.*$)")
+# sponsor_contact_re = re.compile("^B.5.2 Functional name of contact point: (.*$)")
+# sponsor_email_re = re.compile(r"^B.5.6 E-mail:\s*(\S+@\S+[.]\S+)\s*$")
