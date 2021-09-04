@@ -9,38 +9,45 @@ import re
 import sqlite3
 import time
 
+
+class Element:
+
+    def __init__(self, field_type: str, regexpdef):
+        self.field_type = field_type
+        self.regexpdef = regexpdef
+        self.value = ""
+
 # # Lists that define attributes of the trial itself, drugs, and sponsors all follow
 # # the same structure:
 # FIELD_NAME = 0  # name used in database header
 # FIELD_TYPE = 1  # type of field for database; e.g., TEXT NOT NULL
 # FIELD_VAL = 2   # the value extracted
 # REGEXP_REF = 3  # name assigned to each compiled regular expression, above
-#
-#
-# def wipe_list(target: list, start: int) -> None:
-#     """
-#     Sets the third element of a list to "". Called by wipe_all.
-#     :param target: A list consisting of field_name, regexp, value
-#     :param start: Index of first element of list to wipe
-#     :return:
-#     """
-#     for i in range(start, len(target)):
-#         target[i][FIELD_VAL] = ""
-#
-#
-# def wipe_all() -> None:
-#     """
-#     Reinitializes all database fields except for the Eudract number
-#     of the current trial.
-#     :return: None.
-#     """
-#     wipe_list(trial, 1)  # skips the eudract number
-#     wipe_list(drug, 0)
-#     wipe_list(sponsor, 0)
-#     # clear the lists that are built per-trial
-#     drug_list.clear()
-#     sponsor_set.clear()
-#     location_set.clear()
+
+
+def wipe_dict(target: dict) -> None:
+    """
+    Sets the value of a dictionary element to "". Called by wipe_all.
+    :param target: A dictionary with elements.
+    :return:
+    """
+    for item in target:
+        target[item].value = ""
+
+
+def wipe_all() -> None:
+    """
+    Reinitializes all database fields except for the Eudract number
+    of the current trial.
+    :return: None.
+    """
+    wipe_dict(trial)
+    wipe_dict(drug)
+    wipe_dict(sponsor)
+    # clear the lists that are built per-trial
+    drug_list.clear()
+    sponsor_set.clear()
+    location_set.clear()
 
 
 def create_databases(filespec: str) -> None:
@@ -82,6 +89,7 @@ def create_databases(filespec: str) -> None:
         db.execute(db_location_index)
         db.execute(db_sponsor_index)
         db.execute(db_drug_index)
+        print("databases created!")
     db.close()
 #
 #
@@ -272,20 +280,21 @@ def create_databases(filespec: str) -> None:
 #     for where in sorted(location_set):
 #         db.execute(add_location_stmt, (trial[0][FIELD_VAL],
 #                                        where))
-#
-#
-# def add_drug_to_list():
-#     """
-#     Add a drug to the list of drug information, even if it duplicates some information.
-#     :return:
-#     """
-#     # if there is something in any of the fields, add that entry to the drug list
-#     drug_list.append([drug[0][FIELD_VAL].casefold(),    # Trade
-#                       drug[1][FIELD_VAL].casefold(),    # Product
-#                       drug[2][FIELD_VAL].casefold(),    # Code
-#                       ])
-#
-#
+
+
+def add_drug_to_list():
+    """
+    Add a drug to the list of drug information, even if it duplicates some information.
+    :return:
+    """
+    # if there is something in any of the fields, add that entry to the drug list
+    drug_list.append([drug["trade"].value.casefold(),
+                      drug["product"].value.casefold(),
+                      drug["code"].value.casefold(),
+                      ])
+    print("Drug list is now {}".format(drug_list))  # TODO remove
+
+
 # def add_sponsor_to_set():
 #     """
 #     Add a sponsor to the set of sponsor information, even if it duplicates some info.
@@ -295,21 +304,20 @@ def create_databases(filespec: str) -> None:
 #                      sponsor[1][FIELD_VAL].casefold().title(),      # Org
 #                      sponsor[2][FIELD_VAL].casefold().title(),      # Contact
 #                      sponsor[3][FIELD_VAL].casefold()))             # email
-#
-#
-# def empty_list(query_list: list) -> bool:
-#     """
-#     Determine if a list (e.g., drug) has no data. Sometimes trials have no drug at all listed,
-#     in other cases, the IMP section may have an entry without an drug-identifing information.
-#     :param query_list:
-#     :return: True if the list has no data in its third element.
-#     """
-#     for i in range(len(query_list)):
-#         if query_list[i][FIELD_VAL] != "":
-#             return False
-#     return True
-#
-#
+
+
+def empty_dict(query_dict: dict) -> bool:
+    """
+    Determine if a dict (e.g., drug) has no data. Sometimes trials have no drug at all listed,
+    in other cases, the IMP section may have an entry without an drug-identifing information.
+    :return: True if any of the dictionary elements are defined.
+    """
+    for item in query_dict:
+        if query_dict[item].value != "":
+            return False
+    return True
+
+
 # def update_databases(filespec):
 #     """
 #     Calls subroutines to write data to each table of database.
@@ -317,7 +325,7 @@ def create_databases(filespec: str) -> None:
 #     """
 #     # Add uncommitted items to their respective lists
 #     with sqlite3.connect(filespec) as conn:
-#         if not empty_list(drug):
+#         if not empty_dict(drug):
 #             add_drug_to_list()
 #         add_sponsor_to_set()
 #         # Update each database table
@@ -328,25 +336,7 @@ def create_databases(filespec: str) -> None:
 #     conn.close()
 #
 #
-# def list_match(current_line: str, test_list: list) -> str:
-#     """
-#     Looks for the regexp in the current line. If found, it returns the
-#     captured value, otherwise, an empty string (equivalent to False).
-#
-#     :param
-#     current_line: line from file
-#     test_list:  Read in a list with the following elements:
-#         - 0: database header term (str)
-#         - 1: database type (str)
-#         - 2: value (str)
-#         - 3: compiled regular expression (regexp object)
-#     :return: The captured substring
-#     """
-#     m = test_list[REGEXP_REF].match(" ".join(current_line.split()))
-#     if m:
-#         return m.group(1)
-#     else:
-#         return ""
+
 #
 #
 # def table_match(current_line: str, test_table: list, idx: int) -> bool:
@@ -386,33 +376,53 @@ def create_databases(filespec: str) -> None:
 #     """ Print a line of some character to break up output"""
 #     return banchar * width
 #
-#
-# def parse_listing(infile: str, outfile: str):
-#     with open(infile, "r") as eu_trials:
-#         line = eu_trials.readline()
-#         while line:
-#             # For each line, try to match all elements to be captured.
-#             # Begin with the Eudract number, which signals start of a new trial listing
-#             tested_term = list_match(line, trial[0])  # Trial Eudract number
-#             if tested_term:
-#                 # Is this a new trial, or a listing of same trial for different EU member state?
-#                 if trial[0][FIELD_VAL] != tested_term:
-#                     if trial[0][FIELD_VAL] != "":
-#                         # write to database tables
-#                         update_databases(outfile)
-#                     # Capture the new Eudract number for next trial
-#                     trial[0][FIELD_VAL] = tested_term
-#                     # wipe other data elements
-#                     wipe_all()
-#                 line = eu_trials.readline()
-#                 continue
-#             tested_term = imp_no_re.match(" ".join(line.split()))
-#             if tested_term:
-#                 if not empty_list(drug):
-#                     add_drug_to_list()
-#                     wipe_list(drug, 0)
-#                 line = eu_trials.readline()
-#                 continue
+
+def list_match(current_line: str, test_item: Element) -> str:
+    """
+    Looks for the regexp in the current line. If found, it returns the
+    captured value, otherwise, an empty string (equivalent to False).
+
+    :param
+    current_line: line from file
+    test_item: a table item to check for a match
+    :return: The captured substring
+    """
+    m = test_item.regexpdef.match(" ".join(current_line.split()))
+    if m:
+        return m.group(1)
+    else:
+        return ""
+
+
+def parse_listing(infile: str, outfile: str):
+    current_trial = ""
+    print("Parsing.")
+    with open(infile, "r") as eu_trials:
+        line = eu_trials.readline()
+        while line:
+            # For each line, try to match all elements to be captured.
+            # Begin with the Eudract number, which signals start of a new trial listing
+            tested_term = list_match(line, trial["eudract"])  # Trial Eudract number
+            if tested_term:
+                # Is this a new trial, or a listing of same trial for different EU member state?
+                if current_trial != tested_term:
+                    if trial["eudract"].value != "":
+                        # write to database tables
+                        # update_databases(outfile)  TODO: restore
+                        print("debug: Updating databases. Eudract = {}".format(trial["eudract"].value))
+                    # Capture the new Eudract number for next trial
+                    wipe_all()
+                    trial["eudract"].value = current_trial = tested_term
+                line = eu_trials.readline()
+                continue
+            tested_term = imp_no_re.match(" ".join(line.split()))
+            if tested_term:
+                if not empty_dict(drug):
+                    add_drug_to_list()
+                    wipe_dict(drug)
+                line = eu_trials.readline()
+                continue
+            line = eu_trials.readline()  # TODO remove placeholder
 #             tested_term = list_match(line, sponsor[0])  # sponsor
 #             if tested_term:
 #                 if sponsor[0][FIELD_VAL] != "":
@@ -449,14 +459,6 @@ def create_databases(filespec: str) -> None:
 #             line = eu_trials.readline()
 #         # Flush last record
 #         update_databases(outfile)
-
-
-class Element:
-
-    def __init__(self, field_type: str, regexpdef):
-        self.field_type = field_type
-        self.regexpdef = regexpdef
-        self.value = ""
 
 
 # Trial table definitions
@@ -545,118 +547,5 @@ source_file = "test2000x.txt"
 database_name = input("Name of database to write? > ")
 start_time = time.time()
 create_databases(database_name)
-# parse_listing(source_file, database_name)
+parse_listing(source_file, database_name)
 print("Run time: {}".format(time.time() - start_time))
-
-# # Compile regexps related to trial elements
-# trial_eudract_re = re.compile(r"^EudraCT Number:\s*(\S+)")
-# trial_sponsor_code_re = re.compile("^Sponsor's Protocol Code Number: (.*$)")
-# trial_status_re = re.compile("^Trial Status: (.*$)")
-# trial_db_date_re = re.compile("^Date on which this record was first entered in the EudraCT database: (.*$)")
-# trial_title_re = re.compile("^A.3 Full title of the trial: (.*$)")
-# trial_sponsor_protocol_re = re.compile("^A.4.1 Sponsor's protocol code number: (.*$)")
-# trial_isrctn_re = re.compile(r"^A.5.1 ISRCTN \(International Standard Randomised Controlled Trial\) number: (.*$)")
-# trial_who_utrn_re = re.compile(r"^A.5.3 WHO Universal Trial Reference Number \(UTRN\): (.*$)")
-# trial_NCT_re = re.compile(r"^A.5.2 US NCT \(ClinicalTrials.gov registry\) number: (NCT\d+)")
-# trial_placebo_re = re.compile(r"D.8.1 Is a Placebo used in this Trial\? (.*$)")
-# trial_condition_re = re.compile(r"^E.1.1 Medical condition\(s\) being investigated: (.*$)")
-# trial_MedDRA_version_re = re.compile("^E.1.2 Version: ([0-9.]+)")
-# trial_MedDRA_level_re = re.compile("^E.1.2 Level: (.*$)")
-# trial_MedDRA_classification_re = re.compile(r"^E.1.2 Classification code: (\d+)")
-# trial_MedDRA_term_re = re.compile("^E.1.2 Term: (.*$)")
-# trial_MedDRA_SOC_re = re.compile(r"^E.1.2 System Organ Class: (\d+)")
-# trial_rare_re = re.compile("^E.1.3 Condition being studied is a rare disease: (.*$)")
-# trial_fih_re = re.compile("^E.7.1.1 First administration to humans: (.*$)")
-# trial_bioequivalence_re = re.compile("^E.7.1.2 Bioequivalence study: (.*$)")
-# trial_phase1_re = re.compile(r"^E.7.1 Human pharmacology \(Phase I\): (.*$)")
-# trial_phase2_re = re.compile(r"^E.7.2 Therapeutic exploratory \(Phase II\): (.*$)")
-# trial_phase3_re = re.compile(r"^E.7.3 Therapeutic confirmatory \(Phase III\): (.*$)")
-# trial_phase4_re = re.compile(r"^E.7.4 Therapeutic use \(Phase IV\): (.*$)")
-# trial_scope_diagnosis_re = re.compile("^E.6.1 Diagnosis: (.*$)")
-# trial_scope_prophylaxis_re = re.compile("^E.6.2 Prophylaxis: (.*$)")
-# trial_scope_therapy_re = re.compile("^E.6.3 Therapy: (.*$)")
-# trial_scope_safety_re = re.compile("^E.6.4 Safety: (.*$)")
-# trial_scope_efficacy_re = re.compile("^E.6.5 Efficacy: (.*$)")
-# trial_scope_PK_re = re.compile("^E.6.6 Pharmacokinetic: (.*$)")
-# trial_scope_PD_re = re.compile("^E.6.7 Pharmacodynamic: (.*$)")
-# trial_scope_randomised_re = re.compile("^E.8.1.1 Randomised: (.*$)")
-# trial_scope_open_re = re.compile("^E.8.1.2 Open: (.*$)")
-# trial_scope_single_blind_re = re.compile("^E.8.1.3 Single blind: (.*$)")
-# trial_scope_double_blind_re = re.compile("^E.8.1.4 Double blind: (.*$)")
-# trial_scope_crossover_re = re.compile("^E.8.1.6 Cross over: (.*$)")
-# trial_age_in_utero_re = re.compile("^F.1.1.1 In Utero: (.*$)")
-# trial_age_preterm_re = re.compile(r"^F.1.1.2 Preterm newborn infants \(up to gestational age < 37 weeks\): (.*$)")
-# trial_age_newborn_re = re.compile(r"^F.1.1.3 Newborns \(0-27 days\): (.*$)")
-# trial_age_under2_re = re.compile(r"^F.1.1.4 Infants and toddlers \(28 days-23 months\): (.*$)")
-# trial_age_2to11_re = re.compile(r"^F.1.1.5 Children \(2-11years\): (.*$)")
-# trial_age_12to17_re = re.compile(r"^F.1.1.6 Adolescents \(12-17 years\): (.*$)")
-# trial_age_18to64_re = re.compile(r"^F.1.2 Adults \(18-64 years\): (.*$)")
-# trial_age_65plus_re = re.compile(r"^F.1.3 Elderly \(>=65 years\): (.*$)")
-# trial_female_re = re.compile("^F.2.1 Female: (.*$)")
-# trial_male_re = re.compile("^F.2.2 Male: (.*$)")
-# trial_n_re = re.compile("^F.4.2.2 In the whole clinical trial: (.*$)")
-# trial_network_name_re = re.compile("^G.4.1 Name of Organisation: (.*$)")
-# trial_end_of_trial_status_re = re.compile("^P. End of Trial Status: (.*$)")
-# trial_end_of_trial_date_re = re.compile("^P. Date of the global end of the trial: (.*$)")
-
-# # List of unique elements to extract to the Trial table for each trial
-# trial = [["eudract", "TEXT NOT NULL PRIMARY KEY", "", trial_eudract_re],
-#          ["sponsor_code", "TEXT NOT NULL", "", trial_sponsor_code_re],
-#          ["status", "TEXT NOT NULL", "", trial_status_re],
-#          ["db_date", "TEXT NOT NULL", "", trial_db_date_re],
-#          ["title", "TEXT NOT NULL", "", trial_title_re],
-#          ["sponsor_protocol", "TEXT NOT NULL", "", trial_sponsor_protocol_re],
-#          ["isrctn", "TEXT NOT NULL", "", trial_isrctn_re],
-#          ["who_utrn", "TEXT NOT NULL", "", trial_who_utrn_re],
-#          ["nct", "TEXT NOT NULL", "", trial_NCT_re],
-#          ["placebo", "INTEGER NOT NULL", "", trial_placebo_re],
-#          ["condition", "TEXT NOT NULL", "", trial_condition_re],
-#          ["meddra_version", "TEXT NOT NULL", "", trial_MedDRA_version_re],
-#          ["meddra_level", "TEXT NOT NULL", "", trial_MedDRA_level_re],
-#          ["meddra_classification", "TEXT NOT NULL", "", trial_MedDRA_classification_re],
-#          ["meddra_term", "TEXT NOT NULL", "", trial_MedDRA_term_re],
-#          ["meddra_soc", "TEXT NOT NULL", "", trial_MedDRA_SOC_re],
-#          ["rare", "INTEGER NOT NULL", "", trial_rare_re],
-#          ["fih", "INTEGER NOT NULL", "", trial_fih_re],
-#          ["bioequivalence", "INTEGER NOT NULL", "", trial_bioequivalence_re],
-#          ["phase1", "INTEGER NOT NULL", "", trial_phase1_re],
-#          ["phase2", "INTEGER NOT NULL", "", trial_phase2_re],
-#          ["phase3", "INTEGER NOT NULL", "", trial_phase3_re],
-#          ["phase4", "INTEGER NOT NULL", "", trial_phase4_re],
-#          ["diagnosis", "INTEGER NOT NULL", "", trial_scope_diagnosis_re],
-#          ["prophylaxis", "INTEGER NOT NULL", "", trial_scope_prophylaxis_re],
-#          ["therapy", "INTEGER NOT NULL", "", trial_scope_therapy_re],
-#          ["safety", "INTEGER NOT NULL", "", trial_scope_safety_re],
-#          ["efficacy", "INTEGER NOT NULL", "", trial_scope_efficacy_re],
-#          ["pk", "INTEGER NOT NULL", "", trial_scope_PK_re],
-#          ["pd", "INTEGER NOT NULL", "", trial_scope_PD_re],
-#          ["randomised", "INTEGER NOT NULL", "", trial_scope_randomised_re],
-#          ["open_design", "INTEGER NOT NULL", "", trial_scope_open_re],
-#          ["single_blind", "INTEGER NOT NULL", "", trial_scope_single_blind_re],
-#          ["double_blind", "INTEGER NOT NULL", "", trial_scope_double_blind_re],
-#          ["crossover", "INTEGER NOT NULL", "", trial_scope_crossover_re],
-#          ["age_in_utero", "INTEGER NOT NULL", "", trial_age_in_utero_re],
-#          ["age_preterm", "INTEGER NOT NULL", "", trial_age_preterm_re],
-#          ["age_newborn", "INTEGER NOT NULL", "", trial_age_newborn_re],
-#          ["age_under2", "INTEGER NOT NULL", "", trial_age_under2_re],
-#          ["age_2to11", "INTEGER NOT NULL", "", trial_age_2to11_re],
-#          ["age12to17", "INTEGER NOT NULL", "", trial_age_12to17_re],
-#          ["age18to64", "INTEGER NOT NULL", "", trial_age_18to64_re],
-#          ["age_65plus", "INTEGER NOT NULL", "", trial_age_65plus_re],
-#          ["female", "INTEGER NOT NULL", "", trial_female_re],
-#          ["male", "INTEGER NOT NULL", "", trial_male_re],
-#          ["n", "TEXT NOT NULL", "", trial_n_re],
-#          ["network", "TEXT NOT NULL", "", trial_network_name_re],
-#          ["eot_date", "TEXT NOT NULL", "", trial_end_of_trial_date_re]]
-
-# # Compile regexps related to trial IMP(s)
-# imp_no_re = re.compile(r"D.IMP: \d+")  # do not capture - IMP numbering varies between MS records
-# imp_trade_name_re = re.compile("^D.2.1.1.1 Trade name: (.*$)")
-# imp_name_re = re.compile("^D.3.1 Product name: (.*$)")
-# imp_code_re = re.compile("^D.3.2 Product code: (.*$)")
-#
-# # Compile regexps related to trial sponsor
-# sponsor_name_re = re.compile("^B.1.1 Name of Sponsor: (.*$)")
-# sponsor_org_re = re.compile("^B.5.1 Name of organisation: (.*$)")
-# sponsor_contact_re = re.compile("^B.5.2 Functional name of contact point: (.*$)")
-# sponsor_email_re = re.compile(r"^B.5.6 E-mail:\s*(\S+@\S+[.]\S+)\s*$")
