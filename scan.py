@@ -292,18 +292,18 @@ def add_drug_to_list():
                       drug["product"].value.casefold(),
                       drug["code"].value.casefold(),
                       ])
-    print("Drug list is now {}".format(drug_list))  # TODO remove
+    # print("Drug list is now {}".format(drug_list))  # TODO remove
 
 
-# def add_sponsor_to_set():
-#     """
-#     Add a sponsor to the set of sponsor information, even if it duplicates some info.
-#     :return:
-#     """
-#     sponsor_set.add((sponsor[0][FIELD_VAL].casefold().title(),      # Name
-#                      sponsor[1][FIELD_VAL].casefold().title(),      # Org
-#                      sponsor[2][FIELD_VAL].casefold().title(),      # Contact
-#                      sponsor[3][FIELD_VAL].casefold()))             # email
+def add_sponsor_to_set():
+    """
+    Add a sponsor to the set of sponsor information, even if it duplicates some info.
+    :return:
+    """
+    sponsor_set.add((sponsor["name"].value.casefold().title(),
+                     sponsor["org"].value.casefold().title(),
+                     sponsor["contact"].value.casefold().title(),
+                     sponsor["email"].value.casefold()))
 
 
 def empty_dict(query_dict: dict) -> bool:
@@ -337,45 +337,40 @@ def empty_dict(query_dict: dict) -> bool:
 #
 #
 
-#
-#
-# def table_match(current_line: str, test_table: list, idx: int) -> bool:
-#     """
-#     Reads a line from the trial listing and tries to match it against
-#     regular expressions that define trial elements that are unique to each trial.
-#     When a match is found, the value is captured and stored back in the list.
-#     Caveat: Where the database is not consistent, this value may not be reliable.
-#     This algorithm favours responses with some content over null responses and for
-#     yes/no fields, will take a yes over a no.
-#     :param current_line: A line from the text listing of trials
-#     :param test_table: For each table in database, a list of:
-#         - 0: database header term (str)
-#         - 1: database type
-#         - 2: value (str)
-#         - 3: compiled regular expression (regexp object)
-#     :param idx: starting from what index in the table?
-#     :return:
-#     """
-#     for i in range(idx, len(test_table)):
-#         # Don't override previously defined data elements except a "yes"
-#         # trumps a "no" reply
-#         if test_table[i][FIELD_VAL].casefold() == "no":
-#             lm = list_match(current_line, test_table[i])
-#             if lm.casefold() == "yes":
-#                 test_table[i][FIELD_VAL] = "yes"
-#                 return True
-#         elif test_table[i][FIELD_VAL] == "":
-#             lm = list_match(current_line, test_table[i])
-#             if lm:
-#                 test_table[i][FIELD_VAL] = lm
-#                 return True
-#     return False
-#
-#
-# def banner(banchar="*", width=80) -> str:
-#     """ Print a line of some character to break up output"""
-#     return banchar * width
-#
+
+def table_match(current_line: str, dict_item: dict, dict_item_keys: list) -> bool:
+    """
+    Reads a line from the trial listing and tries to match it against
+    regular expressions that define trial elements. When a match is found, the
+    value is captured and stored back in the list. Caveat: Where the database
+    is not consistent, this value may not be reliable. This algorithm favours
+    responses with some content over null responses and for yes/no fields, will
+    take a yes over a no.
+    :param current_line: A line from the text listing of trials
+    :param dict_item: A dictionary with data elements
+    :param dict_item_keys: A subset of dictionary keys to evaluate
+    :return:
+    """
+    for key in dict_item_keys:
+        # Don't override previously defined data elements except a "yes"
+        # trumps a "no" reply
+        if dict_item[key].value.casefold() == "no":
+            lm = list_match(current_line, dict_item[key])
+            if lm.casefold() == "yes":
+                dict_item[key].value = "yes"
+                return True
+        elif dict_item[key].value == "":
+            lm = list_match(current_line, dict_item[key])
+            if lm:
+                dict_item[key].value = lm
+                return True
+    return False
+
+
+def banner(banchar="*", width=80) -> str:
+    """ Print a line of some character to break up output"""
+    return banchar * width
+
 
 def list_match(current_line: str, test_item: Element) -> str:
     """
@@ -422,46 +417,48 @@ def parse_listing(infile: str, outfile: str):
                     wipe_dict(drug)
                 line = eu_trials.readline()
                 continue
-            line = eu_trials.readline()  # TODO remove placeholder
-#             tested_term = list_match(line, sponsor[0])  # sponsor
-#             if tested_term:
-#                 if sponsor[0][FIELD_VAL] != "":
-#                     add_sponsor_to_set()
-#                     wipe_list(sponsor, 0)
-#                 sponsor[0][FIELD_VAL] = tested_term
-#                 # sponsor data is collected for each member state instance of a trial because
-#                 # the sponsor and/or contact info can change per memberstate. It is put into
-#                 # a set with the intent of minimizing duplication.
-#                 line = eu_trials.readline()
-#                 continue
-#             # Locations are defined in two locations: in the header for each member state's instance
-#             # of a trial and in a list for trials that take place at least partially outside the EEA
-#             tested_term = location_re.match(" ".join(line.split()))
-#             if tested_term:
-#                 location_set.add(tested_term.group(1))
-#                 line = eu_trials.readline()
-#                 continue
-#             tested_term = location_list_start_re.match(line)
-#             if tested_term:
-#                 line = eu_trials.readline()
-#                 tested_term = location_list_end_re.match(line)
-#                 while not tested_term:
-#                     location_set.add(" ".join(line.split()))
-#                     line = eu_trials.readline()
-#                     tested_term = location_list_end_re.match(line)
-#                 line = eu_trials.readline()
-#                 continue
-#             # Finally, fill these tables
-#             if table_match(line, trial, 1) or table_match(line, drug, 0) or table_match(line, sponsor, 1):
-#                 line = eu_trials.readline()
-#                 continue
-#             # Future expansion: add any new elements here
-#             line = eu_trials.readline()
-#         # Flush last record
-#         update_databases(outfile)
+            tested_term = list_match(line, sponsor["name"])  # sponsor
+            if tested_term:
+                if sponsor["name"].value != "":
+                    add_sponsor_to_set()
+                    wipe_dict(sponsor)
+                sponsor["name"].value = tested_term
+                # sponsor data is collected for each member state instance of a trial because
+                # the sponsor and/or contact info can change per member state. It is put into
+                # a set with the intent of minimizing duplication.
+                line = eu_trials.readline()
+                continue
+            # Locations are defined in two locations: in the header for each member state's instance
+            # of a trial and in a list for trials that take place at least partially outside the EEA
+            tested_term = location_re.match(" ".join(line.split()))
+            if tested_term:
+                location_set.add(tested_term.group(1))
+                line = eu_trials.readline()
+                continue
+            tested_term = location_list_start_re.match(line)
+            if tested_term:
+                line = eu_trials.readline()
+                tested_term = location_list_end_re.match(line)
+                while not tested_term:
+                    location_set.add(" ".join(line.split()))
+                    line = eu_trials.readline()
+                    tested_term = location_list_end_re.match(line)
+                line = eu_trials.readline()
+                continue
+            # Finally, fill these tables
+            if table_match(line, trial, [x for x in trial if x != "eudract"]) \
+                    or table_match(line, drug, [x for x in drug]) \
+                    or table_match(line, sponsor, [x for x in sponsor if x != "name"]):
+                line = eu_trials.readline()
+                continue
+            # Future expansion: add any new elements here
+            line = eu_trials.readline()
+        # Flush last record
+        print("Debug: Final Updating database")  # TODO restore update_database function
+        # update_databases(outfile)
 
 
-# Trial table definitions
+# Trial dictionary definitions
 trial = {"eudract": Element("TEXT NOT NULL PRIMARY KEY", re.compile(r"^EudraCT Number:\s*(\S+)")),
          "sponsor_code": Element("TEXT NOT NULL", re.compile("^Sponsor's Protocol Code Number: (.*$)")),
          "status": Element("TEXT NOT NULL", re.compile("^Trial Status: (.*$)")),
@@ -536,7 +533,6 @@ location_list_start_re = re.compile("^E.8.6.3 If E.8.6.1 or E.8.6.2 are Yes")
 location_list_end_re = re.compile("^E.8.7 Trial has a data monitoring committee")
 location_list_other_start_re = re.compile("^E.8.6.3 Specify the countries outside of the EEA")
 location_list_other_end_re = re.compile("^E.8.7 Trial has a data monitoring committee:")
-
 
 # Sets are used for sponsor and location to consolidate repeating data
 drug_list = []
