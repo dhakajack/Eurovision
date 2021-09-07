@@ -131,70 +131,69 @@ def update_trial(db) -> None:
               .format(trial["eudract"].value))
 
 
-# def drug_fields_match(okptr: str, currptr: str) -> bool:
-#     """
-#     A helper function for update_drug. Determines if drug fields match for the purpose of consolidating
-#     duplicates
-#     :param okptr:
-#     :param currptr:
-#     :return:
-#     """
-#     if len(okptr) > 0 and okptr == currptr:
-#         return True
-#     return False
-#
-#
-# def update_drug(db, list_of_drugs):
-#     """
-#     Write the drug data for a given trial to the database.
-#     :return:
-#     """
-#     # Sort through drug entries, possibly representing one or several drugs in the trial to
-#     # eliminate duplicates. When one entry contains information for a given drug not present
-#     # in other entries, harvest that information so the final list for each drug combines
-#     # all information available for that drug.
-#     top_ptr = len(list_of_drugs)
-#     if top_ptr > 1:
-#         ok_ptr = 0
-#         while ok_ptr != top_ptr:
-#             current_ptr = ok_ptr + 1
-#             while current_ptr != top_ptr:
-#                 # does any drug field match? Try all except the ALT field ? If so, combine
-#                 if drug_fields_match(list_of_drugs[ok_ptr][0], list_of_drugs[current_ptr][0]) \
-#                   or drug_fields_match(list_of_drugs[ok_ptr][1], list_of_drugs[current_ptr][1]) \
-#                   or drug_fields_match(list_of_drugs[ok_ptr][2], list_of_drugs[current_ptr][2]):
-#
-#                     # Take the shorter of the Trade names:
-#                     if len(list_of_drugs[ok_ptr][0]) > len(list_of_drugs[current_ptr][0]) > 0:
-#                         list_of_drugs[ok_ptr][0] = list_of_drugs[current_ptr][0]
-#
-#                     # Take the shorter of the Product names:
-#                     if len(list_of_drugs[ok_ptr][1]) > len(list_of_drugs[current_ptr][1]) > 0:
-#                         list_of_drugs[ok_ptr][1] = list_of_drugs[current_ptr][1]
-#
-#                     # If only one entry has a value for a given field, use it.
-#                     for i in range(0, len(list_of_drugs[ok_ptr])):
-#                         if list_of_drugs[ok_ptr][i] == "":
-#                             list_of_drugs[ok_ptr][i] = list_of_drugs[current_ptr][i]
-#
-#                     list_of_drugs[current_ptr] = list_of_drugs[top_ptr - 1]
-#                     top_ptr -= 1
-#                 else:
-#                     current_ptr += 1
-#             ok_ptr += 1
-#     # Slice the list down to just the unique drug entries and write to database
-#     list_of_drugs = list_of_drugs[:top_ptr]
-#     add_drug_stmt = """INSERT INTO drug(eudract, {})
-#                     VALUES({})"""
-#     for (trade, product, code) in list_of_drugs:
-#         db.execute(add_drug_stmt.format(", \n".join([x[FIELD_NAME] for x in drug]), ",".join("?" * (len(drug) + 1))),
-#                    (trial[0][FIELD_VAL],
-#                     trade,
-#                     product,
-#                     code))
+def drug_fields_match(okptr: str, currptr: str) -> bool:
+    """
+    A helper function for update_drug. Determines if drug fields match for the purpose of consolidating
+    duplicates
+    :param okptr:
+    :param currptr:
+    :return:
+    """
+    if len(okptr) > 0 and okptr == currptr:
+        return True
+    return False
 
 
-def update_sponsor(db):
+def update_drug(db, list_of_drugs):
+    """
+    Write the drug data for a given trial to the database.
+    :return:
+    """
+    # Sort through drug entries, possibly representing one or several drugs in the trial to
+    # eliminate duplicates. When one entry contains information for a given drug not present
+    # in other entries, harvest that information so the final list for each drug combines
+    # all information available for that drug.
+    top_ptr = len(list_of_drugs)
+    if top_ptr > 1:
+        ok_ptr = 0
+        while ok_ptr != top_ptr:
+            current_ptr = ok_ptr + 1
+            while current_ptr != top_ptr:
+                # does any drug field match? If so, combine
+                if drug_fields_match(list_of_drugs[ok_ptr][0], list_of_drugs[current_ptr][0]) \
+                  or drug_fields_match(list_of_drugs[ok_ptr][1], list_of_drugs[current_ptr][1]) \
+                  or drug_fields_match(list_of_drugs[ok_ptr][2], list_of_drugs[current_ptr][2]):
+
+                    # Take the shorter of the Trade names:
+                    if len(list_of_drugs[ok_ptr][0]) > len(list_of_drugs[current_ptr][0]) > 0:
+                        list_of_drugs[ok_ptr][0] = list_of_drugs[current_ptr][0]
+
+                    # Take the shorter of the Product names:
+                    if len(list_of_drugs[ok_ptr][1]) > len(list_of_drugs[current_ptr][1]) > 0:
+                        list_of_drugs[ok_ptr][1] = list_of_drugs[current_ptr][1]
+
+                    # If only one entry has a value for a given field, use it.
+                    for i in range(0, len(list_of_drugs[ok_ptr])):
+                        if list_of_drugs[ok_ptr][i] == "":
+                            list_of_drugs[ok_ptr][i] = list_of_drugs[current_ptr][i]
+
+                    list_of_drugs[current_ptr] = list_of_drugs[top_ptr - 1]
+                    top_ptr -= 1
+                else:
+                    current_ptr += 1
+            ok_ptr += 1
+    # Slice the list down to just the unique drug entries and write to database
+    list_of_drugs = list_of_drugs[:top_ptr]
+    add_drug_stmt = "INSERT INTO drug({})\nVALUES({})"
+    for details in list_of_drugs:
+        temp = list(details)
+        temp.insert(0, trial["eudract"].value)
+        db.execute(add_drug_stmt.format("\neudract,\n" + ",\n".join(sorted(drug)),
+                                        ",".join("?" * (len(drug) + 1))),
+                   tuple(temp))
+
+
+def update_sponsor(db):  # TODO refactor update sponsor and drug common code
     """
     Write the sponsor-related data for a given trial to the database.
     :return:
@@ -206,6 +205,7 @@ def update_sponsor(db):
         db.execute(add_sponsor_stmt.format("\neudract,\n" + ",\n".join(sorted(sponsor)),
                                            ",".join("?" * (len(sponsor) + 1))),
                    tuple(temp))
+
 
 def update_location(db):
     """
@@ -263,7 +263,7 @@ def update_databases(filespec):
         add_sponsor_to_set()
         # Update each database table
         update_trial(conn)
-        # update_drug(conn, drug_list)  TODO restore
+        update_drug(conn, drug_list)
         update_sponsor(conn)
         update_location(conn)
     conn.close()
