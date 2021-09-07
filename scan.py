@@ -184,26 +184,25 @@ def update_drug(db, list_of_drugs):
             ok_ptr += 1
     # Slice the list down to just the unique drug entries and write to database
     list_of_drugs = list_of_drugs[:top_ptr]
-    add_drug_stmt = "INSERT INTO drug({})\nVALUES({})"
-    for details in list_of_drugs:
-        temp = list(details)
-        temp.insert(0, trial["eudract"].value)
-        db.execute(add_drug_stmt.format("\neudract,\n" + ",\n".join(sorted(drug)),
-                                        ",".join("?" * (len(drug) + 1))),
-                   tuple(temp))
+    tup_to_db(db, "drug", drug, list_of_drugs)
 
 
-def update_sponsor(db):  # TODO refactor update sponsor and drug common code
+def update_sponsor(db):
     """
     Write the sponsor-related data for a given trial to the database.
     :return:
     """
-    add_sponsor_stmt = "INSERT INTO sponsor({})\nVALUES({})"
-    for details in sponsor_set:
+    tup_to_db(db, "sponsor", sponsor, sponsor_set)
+
+
+def tup_to_db(db, tup_name, tup_dict, tups):
+    add_tup_stmt = "INSERT INTO {}({})\nVALUES({})"
+    for details in tups:
         temp = list(details)
         temp.insert(0, trial["eudract"].value)
-        db.execute(add_sponsor_stmt.format("\neudract,\n" + ",\n".join(sorted(sponsor)),
-                                           ",".join("?" * (len(sponsor) + 1))),
+        db.execute(add_tup_stmt.format(tup_name,
+                                       "\neudract,\n" + ",\n".join(sorted(tup_dict)),
+                                       ",".join("?" * (len(tup_dict) + 1))),
                    tuple(temp))
 
 
@@ -373,6 +372,16 @@ def parse_listing(infile: str, outfile: str):
                     location_set.add(" ".join(line.split()))
                     line = eu_trials.readline()
                     tested_term = location_list_end_re.match(line)
+                line = eu_trials.readline()
+                continue
+            tested_term = location_list_other_start_re.match(line)
+            if tested_term:
+                line = eu_trials.readline()
+                tested_term = location_list_other_end_re.match(line)
+                while not tested_term:
+                    location_set.add(" ".join(line.split()))
+                    line = eu_trials.readline()
+                    tested_term = location_list_other_end_re.match(line)
                 line = eu_trials.readline()
                 continue
             # Finally, fill these tables
