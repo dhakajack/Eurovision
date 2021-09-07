@@ -17,13 +17,6 @@ class Element:
         self.regexpdef = regexpdef
         self.value = ""
 
-# # Lists that define attributes of the trial itself, drugs, and sponsors all follow
-# # the same structure:
-# FIELD_NAME = 0  # name used in database header
-# FIELD_TYPE = 1  # type of field for database; e.g., TEXT NOT NULL
-# FIELD_VAL = 2   # the value extracted
-# REGEXP_REF = 3  # name assigned to each compiled regular expression, above
-
 
 def wipe_dict(target: dict) -> None:
     """
@@ -91,106 +84,53 @@ def create_databases(filespec: str) -> None:
         db.execute(db_drug_index)
         print("databases created!")
     db.close()
-#
-#
-# def y_n_to_int(answer: str) -> int:
-#     """
-#     Helper function to convert "Yes" to 1, which is how boolean True is recorded in sqlite; any
-#     other value including "" is taken as a False. Case insensitive.
-#     :param answer: "Yes" or anything other string.
-#     :return: 1 or 0 for yes or no.
-#     """
-#     if answer.casefold() == "yes":
-#         return 1
-#     else:
-#         return 0
-#
-#
-# def update_trial(db) -> None:
-#     """
-#     Write the core parameters for a given trial (defined by unique
-#     Eudract number) to database. Uses replacement fields, which may
-#     be overkill, but just in case anyone actually managed to stick
-#     some SQL into the drug registry itself.
-#     :return:
-#     """
-#     # Consistency check: Trial status (trial[2] is often not updated in one or more
-#     # records for a trial. If any MS entry lists a completion date (trial[43], we do
-#     # not know how the trial ended, but can be pretty sure that it did end. The status
-#     # of 'not ongoing' is not a native value for this field to make it obvious that
-#     # this was imputed during curation.
-#
-#     if(trial[43][FIELD_VAL]) and trial[2][FIELD_VAL].casefold() == "ongoing":
-#         trial[2][FIELD_VAL] = "Not Ongoing"
-#
-#     # If the meddra level is SOC rather than the expected PT, LLT, etc.,
-#     # and there is no entry for the meddra SOC, copy the classification
-#     # into the SOC field
-#
-#     if not trial[12][FIELD_VAL] and trial[9][FIELD_VAL].casefold() == "soc":
-#         trial[12][FIELD_VAL] = trial[10][FIELD_VAL]
-#
-#     print("Updating trial {}".format(trial[0][FIELD_VAL]))
-#     add_trial_stmt = """INSERT INTO trial(
-#                         {})
-#                         VALUES({})"""
-#
-#     try:
-#         db.execute(add_trial_stmt.format(", \n".join([x[FIELD_NAME] for x in trial]), ",".join("?" * len(trial))), (
-#                    trial[0][FIELD_VAL],                 # eudract
-#                    trial[1][FIELD_VAL],                 # sponsor
-#                    trial[2][FIELD_VAL],                 # status
-#                    trial[3][FIELD_VAL],                 # db_date
-#                    trial[4][FIELD_VAL],                 # title
-#                    trial[5][FIELD_VAL],                 # sponsor_protocol
-#                    trial[6][FIELD_VAL],                 # isrctn
-#                    trial[7][FIELD_VAL],                 # who_utrn
-#                    trial[8][FIELD_VAL],                 # nct
-#                    y_n_to_int(trial[9][FIELD_VAL]),     # placebo
-#                    trial[10][FIELD_VAL],                # condition
-#                    trial[11][FIELD_VAL],                # meddra_version
-#                    trial[12][FIELD_VAL],                # meddra_level
-#                    trial[13][FIELD_VAL],                # meddra_classification
-#                    trial[14][FIELD_VAL],                # meddra_term
-#                    trial[15][FIELD_VAL],                # meddra_soc
-#                    y_n_to_int(trial[16][FIELD_VAL]),    # rare
-#                    y_n_to_int(trial[17][FIELD_VAL]),    # fih
-#                    y_n_to_int(trial[18][FIELD_VAL]),    # bioequivalence
-#                    y_n_to_int(trial[19][FIELD_VAL]),    # phase1
-#                    y_n_to_int(trial[20][FIELD_VAL]),    # phase2
-#                    y_n_to_int(trial[21][FIELD_VAL]),    # phase3
-#                    y_n_to_int(trial[22][FIELD_VAL]),    # phase4
-#                    y_n_to_int(trial[23][FIELD_VAL]),    # diagnosis
-#                    y_n_to_int(trial[24][FIELD_VAL]),    # prophylaxis
-#                    y_n_to_int(trial[25][FIELD_VAL]),    # therapy
-#                    y_n_to_int(trial[26][FIELD_VAL]),    # safety
-#                    y_n_to_int(trial[27][FIELD_VAL]),    # efficacy
-#                    y_n_to_int(trial[28][FIELD_VAL]),    # pk
-#                    y_n_to_int(trial[29][FIELD_VAL]),    # pd
-#                    y_n_to_int(trial[30][FIELD_VAL]),    # randomised
-#                    y_n_to_int(trial[31][FIELD_VAL]),    # open_design
-#                    y_n_to_int(trial[32][FIELD_VAL]),    # single_blind
-#                    y_n_to_int(trial[33][FIELD_VAL]),    # double_blind
-#                    y_n_to_int(trial[34][FIELD_VAL]),    # crossover
-#                    y_n_to_int(trial[35][FIELD_VAL]),    # age_in_utero
-#                    y_n_to_int(trial[36][FIELD_VAL]),    # age_preterm
-#                    y_n_to_int(trial[37][FIELD_VAL]),    # age_newborn
-#                    y_n_to_int(trial[38][FIELD_VAL]),    # age_under2
-#                    y_n_to_int(trial[39][FIELD_VAL]),    # age_2to11
-#                    y_n_to_int(trial[40][FIELD_VAL]),    # age_12to17
-#                    y_n_to_int(trial[41][FIELD_VAL]),    # age_18to64
-#                    y_n_to_int(trial[42][FIELD_VAL]),    # age_65plus
-#                    y_n_to_int(trial[43][FIELD_VAL]),    # female
-#                    y_n_to_int(trial[44][FIELD_VAL]),    # male
-#                    trial[45][FIELD_VAL],                # n
-#                    trial[46][FIELD_VAL],                # network
-#                    trial[47][FIELD_VAL]                 # eot_date
-#                    ))
-#     except sqlite3.IntegrityError:
-#         print("Database integrity error, likely duplicate Eudract number for study {}"
-#               .format(trial[0][FIELD_VAL]))
-#
-#
+
+
+def update_trial(db) -> None:
+    """
+    Write the core parameters for a given trial (defined by unique
+    Eudract number) to database. Uses replacement fields, which may
+    be overkill, but just in case anyone actually managed to stick
+    some SQL into the drug registry itself.
+    :return:
+    """
+    # Consistency check: Trial status (trial[2] is often not updated in one or more
+    # records for a trial. If any MS entry lists a completion date (trial[43], we do
+    # not know how the trial ended, but can be pretty sure that it did end. The status
+    # of 'not ongoing' is not a native value for this field to make it obvious that
+    # this was imputed during curation.
+
+    if trial["eot_date"].value and trial["status"].value.casefold() == "ongoing":
+        trial["status"].value = "Not Ongoing"
+
+    # If the meddra level is SOC rather than the expected PT, LLT, etc.,
+    # and there is no entry for the meddra SOC, copy the classification
+    # into the SOC field
+
+    if not trial["meddra_soc"].value and trial["meddra_level"].value.casefold() == "soc":
+        trial["meddra_soc"].value = trial["meddra_classification"].value
+
+    print("Updating trial {}".format(trial["eudract"].value))
+
+    for x in trial:
+        if trial[x].value.casefold() == "yes":   # TODO optimize all this case folding later, maybe just do it once
+            trial[x].value = 1
+        elif trial[x].value.casefold() == "no":
+            trial[x].value = 0
+
+    add_trial_stmt = """INSERT INTO trial(
+                        {})
+                        VALUES({})"""
+
+    try:
+        db.execute(add_trial_stmt
+                   .format(", \n".join(sorted(trial)), ",".join("?" * len(trial))),
+                   [trial[x].value for x in sorted(trial)])
+    except sqlite3.IntegrityError:
+        print("Database integrity error, likely duplicate Eudract number for study {}"
+              .format(trial["eudract"].value))
+
+
 # def drug_fields_match(okptr: str, currptr: str) -> bool:
 #     """
 #     A helper function for update_drug. Determines if drug fields match for the purpose of consolidating
@@ -252,34 +192,30 @@ def create_databases(filespec: str) -> None:
 #                     trade,
 #                     product,
 #                     code))
-#
-#
-# def update_sponsor(db):
-#     """
-#     Write the sponsor-related data for a given trial to the database.
-#     :return:
-#     """
-#     add_sponsor_stmt = """INSERT INTO sponsor(eudract, {})
-#                         VALUES(?,?,?,?,?)"""
-#     for (sponsor_name, sponsor_org, sponsor_contact, sponsor_email) in sponsor_set:
-#         db.execute(add_sponsor_stmt.format(", \n".join([x[FIELD_NAME] for x in sponsor])),
-#                    (trial[0][FIELD_VAL],
-#                     sponsor_name,
-#                     sponsor_org,
-#                     sponsor_contact,
-#                     sponsor_email))
-#
-#
-# def update_location(db):
-#     """
-#     Write the location-related data about a trial to the database.
-#     :return:
-#     """
-#     add_location_stmt = """INSERT INTO location(eudract, location)
-#                             VALUES(?,?)"""
-#     for where in sorted(location_set):
-#         db.execute(add_location_stmt, (trial[0][FIELD_VAL],
-#                                        where))
+
+
+def update_sponsor(db):
+    """
+    Write the sponsor-related data for a given trial to the database.
+    :return:
+    """
+    add_sponsor_stmt = "INSERT INTO sponsor({})\nVALUES({})"
+    for details in sponsor_set:
+        temp = list(details)
+        temp.insert(0, trial["eudract"].value)
+        db.execute(add_sponsor_stmt.format("\neudract,\n" + ",\n".join(sorted(sponsor)),
+                                           ",".join("?" * (len(sponsor) + 1))),
+                   tuple(temp))
+
+def update_location(db):
+    """
+    Write the location-related data about a trial to the database.
+    :return:
+    """
+    add_location_stmt = "INSERT INTO location(eudract, location)\nVALUES(?,?)"
+    for where in sorted(location_set):
+        db.execute(add_location_stmt, (trial["eudract"].value,
+                                       where))
 
 
 def add_drug_to_list():
@@ -300,10 +236,7 @@ def add_sponsor_to_set():
     Add a sponsor to the set of sponsor information, even if it duplicates some info.
     :return:
     """
-    sponsor_set.add((sponsor["name"].value.casefold().title(),
-                     sponsor["org"].value.casefold().title(),
-                     sponsor["contact"].value.casefold().title(),
-                     sponsor["email"].value.casefold()))
+    sponsor_set.add(tuple([sponsor[x].value for x in sorted(sponsor)]))
 
 
 def empty_dict(query_dict: dict) -> bool:
@@ -318,24 +251,22 @@ def empty_dict(query_dict: dict) -> bool:
     return True
 
 
-# def update_databases(filespec):
-#     """
-#     Calls subroutines to write data to each table of database.
-#     :return:
-#     """
-#     # Add uncommitted items to their respective lists
-#     with sqlite3.connect(filespec) as conn:
-#         if not empty_dict(drug):
-#             add_drug_to_list()
-#         add_sponsor_to_set()
-#         # Update each database table
-#         update_trial(conn)
-#         update_drug(conn, drug_list)
-#         update_sponsor(conn)
-#         update_location(conn)
-#     conn.close()
-#
-#
+def update_databases(filespec):
+    """
+    Calls subroutines to write data to each table of database.
+    :return:
+    """
+    # Add uncommitted items to their respective lists
+    with sqlite3.connect(filespec) as conn:
+        if not empty_dict(drug):
+            add_drug_to_list()
+        add_sponsor_to_set()
+        # Update each database table
+        update_trial(conn)
+        # update_drug(conn, drug_list)  TODO restore
+        update_sponsor(conn)
+        update_location(conn)
+    conn.close()
 
 
 def table_match(current_line: str, dict_item: dict, dict_item_keys: list) -> bool:
@@ -403,8 +334,7 @@ def parse_listing(infile: str, outfile: str):
                 if current_trial != tested_term:
                     if trial["eudract"].value != "":
                         # write to database tables
-                        # update_databases(outfile)  TODO: restore
-                        print("debug: Updating databases. Eudract = {}".format(trial["eudract"].value))
+                        update_databases(outfile)
                     # Capture the new Eudract number for next trial
                     wipe_all()
                     trial["eudract"].value = current_trial = tested_term
@@ -454,8 +384,7 @@ def parse_listing(infile: str, outfile: str):
             # Future expansion: add any new elements here
             line = eu_trials.readline()
         # Flush last record
-        print("Debug: Final Updating database")  # TODO restore update_database function
-        # update_databases(outfile)
+        update_databases(outfile)
 
 
 # Trial dictionary definitions
