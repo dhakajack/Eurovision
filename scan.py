@@ -340,7 +340,7 @@ def parse_listing(infile: str, outfile: str):
                     trial["eudract"].value = current_trial = tested_term
                 line = eu_trials.readline()
                 continue
-            tested_term = imp_no_re.match(" ".join(line.split()))
+            tested_term = other["imp_re"].regexpdef.match(" ".join(line.split()))
             if tested_term:
                 if not empty_dict(drug):
                     add_drug_to_list()
@@ -360,29 +360,29 @@ def parse_listing(infile: str, outfile: str):
                 continue
             # Locations are defined in two locations: in the header for each member state's instance
             # of a trial and in a list for trials that take place at least partially outside the EEA
-            tested_term = location_re.match(" ".join(line.split()))
+            tested_term = other["loc_re"].regexpdef.match(" ".join(line.split()))
             if tested_term:
                 location_set.add(tested_term.group(1))
                 line = eu_trials.readline()
                 continue
-            tested_term = location_list_start_re.match(line)
+            tested_term = other["loc_start_re"].regexpdef.match(line)
             if tested_term:
                 line = eu_trials.readline()
-                tested_term = location_list_end_re.match(line)
+                tested_term = other["loc_end_re"].regexpdef.match(line)
                 while not tested_term:
                     location_set.add(" ".join(line.split()))
                     line = eu_trials.readline()
-                    tested_term = location_list_end_re.match(line)
+                    tested_term = other["loc_end_re"].regexpdef.match(line)
                 line = eu_trials.readline()
                 continue
-            tested_term = location_list_other_start_re.match(line)
+            tested_term = other["loc_alt_start_re"].regexpdef.match(line)
             if tested_term:
                 line = eu_trials.readline()
-                tested_term = location_list_other_end_re.match(line)
+                tested_term = other["loc_alt_end_re"].regexpdef.match(line)
                 while not tested_term:
                     location_set.add(" ".join(line.split()))
                     line = eu_trials.readline()
-                    tested_term = location_list_other_end_re.match(line)
+                    tested_term = other["loc_alt_end_re"].regexpdef.match(line)
                 line = eu_trials.readline()
                 continue
             # Finally, fill these tables
@@ -466,12 +466,13 @@ sponsor = {"name": Element("TEXT NOT NULL", re.compile("^B.1.1 Name of Sponsor: 
            "email": Element("TEXT NOT NULL", re.compile(r"^B.5.6 E-mail:\s*(\S+@\S+[.]\S+)\s*$"))}
 
 # Other regexp definitions for precompiling:
-imp_no_re = re.compile(r"D.IMP: \d+")  # do not capture - IMP numbering varies between MS records
-location_re = re.compile(r"^National Competent Authority:\s+(\S*)\s+[-]")
-location_list_start_re = re.compile("^E.8.6.3 If E.8.6.1 or E.8.6.2 are Yes")
-location_list_end_re = re.compile("^E.8.7 Trial has a data monitoring committee")
-location_list_other_start_re = re.compile("^E.8.6.3 Specify the countries outside of the EEA")
-location_list_other_end_re = re.compile("^E.8.7 Trial has a data monitoring committee:")
+other = {"imp_re": Element("", re.compile(r"D.IMP: \d+")),
+         "loc_re": Element("", re.compile(r"^National Competent Authority:\s+(\S*)\s+[-]")),
+         "loc_start_re": Element("", re.compile("^E.8.6.3 If E.8.6.1 or E.8.6.2 are Yes")),
+         "loc_end_re": Element("", re.compile("^E.8.7 Trial has a data monitoring committee")),
+         "loc_alt_start_re": Element("", re.compile("^E.8.6.3 Specify the countries outside of the EEA")),
+         "loc_alt_end_re": Element("", re.compile("^E.8.7 Trial has a data monitoring committee:"))
+         }
 
 # Sets are used for sponsor and location to consolidate repeating data
 drug_list = []
