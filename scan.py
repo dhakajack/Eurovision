@@ -12,9 +12,10 @@ import time
 
 class Element:
 
-    def __init__(self, field_type: str, regexpdef):
+    def __init__(self, field_type: str, regdef: str):
         self.field_type = field_type
-        self.regexpdef = regexpdef
+        self.regdef = regdef
+        self.regexpdef = re.compile(regdef)
         self.value = ""
 
 
@@ -326,6 +327,9 @@ def parse_listing(infile: str, outfile: str):
     with open(infile, "r") as eu_trials:
         line = eu_trials.readline()
         while line:
+            if not any(screen_item in line for screen_item in screening_list):
+                line = eu_trials.readline()
+                continue
             # For each line, try to match all elements to be captured.
             # Begin with the Eudract number, which signals start of a new trial listing
             tested_term = list_match(line, trial["eudract"])  # Trial Eudract number
@@ -398,80 +402,77 @@ def parse_listing(infile: str, outfile: str):
 
 
 # Trial dictionary definitions
-trial = {"eudract": Element("TEXT NOT NULL PRIMARY KEY", re.compile(r"^EudraCT Number:\s*(\S+)")),
-         "sponsor_code": Element("TEXT NOT NULL", re.compile("^Sponsor's Protocol Code Number: (.*$)")),
-         "status": Element("TEXT NOT NULL", re.compile("^Trial Status: (.*$)")),
+trial = {"eudract": Element("TEXT NOT NULL PRIMARY KEY", r"^EudraCT Number:\s*(\S+)"),
+         "sponsor_code": Element("TEXT NOT NULL", "^Sponsor's Protocol Code Number: (.*$)"),
+         "status": Element("TEXT NOT NULL", "^Trial Status: (.*$)"),
          "db_date": Element("TEXT NOT NULL",
-                            re.compile("^Date on which this record was first entered in the EudraCT database: (.*$)")),
-         "title": Element("TEXT NOT NULL", re.compile("^A.3 Full title of the trial: (.*$)")),
-         "sponsor_protocol": Element("TEXT NOT NULL", re.compile("^A.4.1 Sponsor's protocol code number: (.*$)")),
+                            "^Date on which this record was first entered in the EudraCT database: (.*$)"),
+         "title": Element("TEXT NOT NULL", "^A.3 Full title of the trial: (.*$)"),
+         "sponsor_protocol": Element("TEXT NOT NULL", "^A.4.1 Sponsor's protocol code number: (.*$)"),
          "isrctn": Element("TEXT NOT NULL",
-                           re.compile(r"^A.5.1 ISRCTN \(International Standard "
-                                      r"Randomised Controlled Trial\) number: (.*$)")),
+                           r"^A.5.1 ISRCTN \(International Standard Randomised Controlled Trial\) number: (.*$)"),
          "who_utrn": Element("TEXT NOT NULL",
-                             re.compile(r"^A.5.3 WHO Universal Trial Reference Number \(UTRN\): (.*$)")),
-         "nct": Element("TEXT NOT NULL", re.compile(r"^A.5.2 US NCT \(ClinicalTrials.gov registry\) number: (NCT\d+)")),
-         "placebo": Element("INTEGER NOT NULL", re.compile(r"D.8.1 Is a Placebo used in this Trial\? (.*$)")),
-         "condition": Element("TEXT NOT NULL", re.compile(r"^E.1.1 Medical condition\(s\) being investigated: (.*$)")),
-         "meddra_version": Element("TEXT NOT NULL", re.compile("^E.1.2 Version: ([0-9.]+)")),
-         "meddra_level": Element("TEXT NOT NULL", re.compile("^E.1.2 Level: (.*$)")),
-         "meddra_classification": Element("TEXT NOT NULL", re.compile(r"^E.1.2 Classification code: (\d+)")),
-         "meddra_term": Element("TEXT NOT NULL", re.compile("^E.1.2 Term: (.*$)")),
-         "meddra_soc": Element("TEXT NOT NULL", re.compile(r"^E.1.2 System Organ Class: (\d+)")),
-         "rare": Element("INTEGER NOT NULL", re.compile("^E.1.3 Condition being studied is a rare disease: (.*$)")),
-         "fih": Element("INTEGER NOT NULL", re.compile("^E.7.1.1 First administration to humans: (.*$)")),
-         "bioequivalence": Element("INTEGER NOT NULL", re.compile("^E.7.1.2 Bioequivalence study: (.*$)")),
-         "phase1": Element("INTEGER NOT NULL", re.compile(r"^E.7.1 Human pharmacology \(Phase I\): (.*$)")),
-         "phase2": Element("INTEGER NOT NULL", re.compile(r"^E.7.2 Therapeutic exploratory \(Phase II\): (.*$)")),
-         "phase3": Element("INTEGER NOT NULL", re.compile(r"^E.7.3 Therapeutic confirmatory \(Phase III\): (.*$)")),
-         "phase4": Element("INTEGER NOT NULL", re.compile(r"^E.7.4 Therapeutic use \(Phase IV\): (.*$)")),
-         "diagnosis": Element("INTEGER NOT NULL", re.compile("^E.6.1 Diagnosis: (.*$)")),
-         "prophylaxis": Element("INTEGER NOT NULL", re.compile("^E.6.2 Prophylaxis: (.*$)")),
-         "therapy": Element("INTEGER NOT NULL", re.compile("^E.6.3 Therapy: (.*$)")),
-         "safety": Element("INTEGER NOT NULL", re.compile("^E.6.4 Safety: (.*$)")),
-         "efficacy": Element("INTEGER NOT NULL", re.compile("^E.6.5 Efficacy: (.*$)")),
-         "pk": Element("INTEGER NOT NULL", re.compile("^E.6.6 Pharmacokinetic: (.*$)")),
-         "pd": Element("INTEGER NOT NULL", re.compile("^E.6.7 Pharmacodynamic: (.*$)")),
-         "randomised": Element("INTEGER NOT NULL", re.compile("^E.8.1.1 Randomised: (.*$)")),
-         "open_design": Element("INTEGER NOT NULL", re.compile("^E.8.1.2 Open: (.*$)")),
-         "single_blind": Element("INTEGER NOT NULL", re.compile("^E.8.1.3 Single blind: (.*$)")),
-         "double_blind": Element("INTEGER NOT NULL", re.compile("^E.8.1.4 Double blind: (.*$)")),
-         "crossover": Element("INTEGER NOT NULL", re.compile("^E.8.1.6 Cross over: (.*$)")),
-         "age_in_utero": Element("INTEGER NOT NULL", re.compile("^F.1.1.1 In Utero: (.*$)")),
+                             r"^A.5.3 WHO Universal Trial Reference Number \(UTRN\): (.*$)"),
+         "nct": Element("TEXT NOT NULL", r"^A.5.2 US NCT \(ClinicalTrials.gov registry\) number: (NCT\d+)"),
+         "placebo": Element("INTEGER NOT NULL", r"D.8.1 Is a Placebo used in this Trial\? (.*$)"),
+         "condition": Element("TEXT NOT NULL", r"^E.1.1 Medical condition\(s\) being investigated: (.*$)"),
+         "meddra_version": Element("TEXT NOT NULL", "^E.1.2 Version: ([0-9.]+)"),
+         "meddra_level": Element("TEXT NOT NULL", "^E.1.2 Level: (.*$)"),
+         "meddra_classification": Element("TEXT NOT NULL", r"^E.1.2 Classification code: (\d+)"),
+         "meddra_term": Element("TEXT NOT NULL", "^E.1.2 Term: (.*$)"),
+         "meddra_soc": Element("TEXT NOT NULL", r"^E.1.2 System Organ Class: (\d+)"),
+         "rare": Element("INTEGER NOT NULL", "^E.1.3 Condition being studied is a rare disease: (.*$)"),
+         "fih": Element("INTEGER NOT NULL", "^E.7.1.1 First administration to humans: (.*$)"),
+         "bioequivalence": Element("INTEGER NOT NULL", "^E.7.1.2 Bioequivalence study: (.*$)"),
+         "phase1": Element("INTEGER NOT NULL", r"^E.7.1 Human pharmacology \(Phase I\): (.*$)"),
+         "phase2": Element("INTEGER NOT NULL", r"^E.7.2 Therapeutic exploratory \(Phase II\): (.*$)"),
+         "phase3": Element("INTEGER NOT NULL", r"^E.7.3 Therapeutic confirmatory \(Phase III\): (.*$)"),
+         "phase4": Element("INTEGER NOT NULL", r"^E.7.4 Therapeutic use \(Phase IV\): (.*$)"),
+         "diagnosis": Element("INTEGER NOT NULL", "^E.6.1 Diagnosis: (.*$)"),
+         "prophylaxis": Element("INTEGER NOT NULL", "^E.6.2 Prophylaxis: (.*$)"),
+         "therapy": Element("INTEGER NOT NULL", "^E.6.3 Therapy: (.*$)"),
+         "safety": Element("INTEGER NOT NULL", "^E.6.4 Safety: (.*$)"),
+         "efficacy": Element("INTEGER NOT NULL", "^E.6.5 Efficacy: (.*$)"),
+         "pk": Element("INTEGER NOT NULL", "^E.6.6 Pharmacokinetic: (.*$)"),
+         "pd": Element("INTEGER NOT NULL", "^E.6.7 Pharmacodynamic: (.*$)"),
+         "randomised": Element("INTEGER NOT NULL", "^E.8.1.1 Randomised: (.*$)"),
+         "open_design": Element("INTEGER NOT NULL", "^E.8.1.2 Open: (.*$)"),
+         "single_blind": Element("INTEGER NOT NULL", "^E.8.1.3 Single blind: (.*$)"),
+         "double_blind": Element("INTEGER NOT NULL", "^E.8.1.4 Double blind: (.*$)"),
+         "crossover": Element("INTEGER NOT NULL", "^E.8.1.6 Cross over: (.*$)"),
+         "age_in_utero": Element("INTEGER NOT NULL", "^F.1.1.1 In Utero: (.*$)"),
          "age_preterm": Element("INTEGER NOT NULL",
-                                re.compile(r"^F.1.1.2 Preterm newborn infants \(up to "
-                                           r"gestational age < 37 weeks\): (.*$)")),
-         "age_newborn": Element("INTEGER NOT NULL", re.compile(r"^F.1.1.3 Newborns \(0-27 days\): (.*$)")),
-         "age_under2": Element("INTEGER NOT NULL",
-                               re.compile(r"^F.1.1.4 Infants and toddlers \(28 days-23 months\): (.*$)")),
-         "age_2to11": Element("INTEGER NOT NULL", re.compile(r"^F.1.1.5 Children \(2-11years\): (.*$)")),
-         "age12to17": Element("INTEGER NOT NULL", re.compile(r"^F.1.1.6 Adolescents \(12-17 years\): (.*$)")),
-         "age18to64": Element("INTEGER NOT NULL", re.compile(r"^F.1.2 Adults \(18-64 years\): (.*$)")),
-         "age_65plus": Element("INTEGER NOT NULL", re.compile(r"^F.1.3 Elderly \(>=65 years\): (.*$)")),
-         "female": Element("INTEGER NOT NULL", re.compile("^F.2.1 Female: (.*$)")),
-         "male": Element("INTEGER NOT NULL", re.compile("^F.2.2 Male: (.*$)")),
-         "n": Element("TEXT NOT NULL", re.compile("^F.4.2.2 In the whole clinical trial: (.*$)")),
-         "network": Element("TEXT NOT NULL", re.compile("^G.4.1 Name of Organisation: (.*$)")),
-         "eot_date": Element("TEXT NOT NULL", re.compile("^P. Date of the global end of the trial: (.*$)"))}
+                                r"^F.1.1.2 Preterm newborn infants \(up to gestational age < 37 weeks\): (.*$)"),
+         "age_newborn": Element("INTEGER NOT NULL", r"^F.1.1.3 Newborns \(0-27 days\): (.*$)"),
+         "age_under2": Element("INTEGER NOT NULL", r"^F.1.1.4 Infants and toddlers \(28 days-23 months\): (.*$)"),
+         "age_2to11": Element("INTEGER NOT NULL", r"^F.1.1.5 Children \(2-11years\): (.*$)"),
+         "age12to17": Element("INTEGER NOT NULL", r"^F.1.1.6 Adolescents \(12-17 years\): (.*$)"),
+         "age18to64": Element("INTEGER NOT NULL", r"^F.1.2 Adults \(18-64 years\): (.*$)"),
+         "age_65plus": Element("INTEGER NOT NULL", r"^F.1.3 Elderly \(>=65 years\): (.*$)"),
+         "female": Element("INTEGER NOT NULL", "^F.2.1 Female: (.*$)"),
+         "male": Element("INTEGER NOT NULL", "^F.2.2 Male: (.*$)"),
+         "n": Element("TEXT NOT NULL", "^F.4.2.2 In the whole clinical trial: (.*$)"),
+         "network": Element("TEXT NOT NULL", "^G.4.1 Name of Organisation: (.*$)"),
+         "eot_date": Element("TEXT NOT NULL", "^P. Date of the global end of the trial: (.*$)")}
 
 # Drug table definitions
-drug = {"trade": Element("TEXT NOT NULL", re.compile("^D.2.1.1.1 Trade name: (.*$)")),
-        "product": Element("TEXT NOT NULL", re.compile("^D.3.1 Product name: (.*$)")),
-        "code": Element("TEXT NOT NULL", re.compile("^D.3.2 Product code: (.*$)"))}
+drug = {"trade": Element("TEXT NOT NULL", "^D.2.1.1.1 Trade name: (.*$)"),
+        "product": Element("TEXT NOT NULL", "^D.3.1 Product name: (.*$)"),
+        "code": Element("TEXT NOT NULL", "^D.3.2 Product code: (.*$)")}
 
 # Sponsor table definitions
-sponsor = {"name": Element("TEXT NOT NULL", re.compile("^B.1.1 Name of Sponsor: (.*$)")),
-           "org": Element("TEXT NOT NULL", re.compile("^B.5.1 Name of organisation: (.*$)")),
-           "contact": Element("TEXT NOT NULL", re.compile("^B.5.2 Functional name of contact point: (.*$)")),
-           "email": Element("TEXT NOT NULL", re.compile(r"^B.5.6 E-mail:\s*(\S+@\S+[.]\S+)\s*$"))}
+sponsor = {"name": Element("TEXT NOT NULL", "^B.1.1 Name of Sponsor: (.*$)"),
+           "org": Element("TEXT NOT NULL", "^B.5.1 Name of organisation: (.*$)"),
+           "contact": Element("TEXT NOT NULL", "^B.5.2 Functional name of contact point: (.*$)"),
+           "email": Element("TEXT NOT NULL", r"^B.5.6 E-mail:\s*(\S+@\S+[.]\S+)\s*$")}
 
 # Other regexp definitions for precompiling:
-other = {"imp_re": Element("", re.compile(r"D.IMP: \d+")),
-         "loc_re": Element("", re.compile(r"^National Competent Authority:\s+(\S*)\s+[-]")),
-         "loc_start_re": Element("", re.compile("^E.8.6.3 If E.8.6.1 or E.8.6.2 are Yes")),
-         "loc_end_re": Element("", re.compile("^E.8.7 Trial has a data monitoring committee")),
-         "loc_alt_start_re": Element("", re.compile("^E.8.6.3 Specify the countries outside of the EEA")),
-         "loc_alt_end_re": Element("", re.compile("^E.8.7 Trial has a data monitoring committee:"))
+other = {"imp_re": Element("", r"D.IMP: \d+"),
+         "loc_re": Element("", r"^National Competent Authority:\s+(\S*)\s+[-]"),
+         "loc_start_re": Element("", "^E.8.6.3 If E.8.6.1 or E.8.6.2 are Yes"),
+         "loc_end_re": Element("", "^E.8.7 Trial has a data monitoring committee"),
+         "loc_alt_start_re": Element("", "^E.8.6.3 Specify the countries outside of the EEA"),
+         "loc_alt_end_re": Element("", "^E.8.7 Trial has a data monitoring committee:")
          }
 
 # Sets are used for sponsor and location to consolidate repeating data
@@ -479,7 +480,13 @@ drug_list = []
 sponsor_set = set()
 location_set = set()
 
-source_file = "headend"
+# compile a screening list - when parsing, will skip any line without one of these phrases
+screening_list = []
+for dictionary in (trial, drug, sponsor, other):
+    for dict_idx in dictionary:
+        screening_list.append(dictionary[dict_idx].regdef[:7].strip("^"))
+
+source_file = "test2000x.txt"
 database_name = input("Name of database to write? > ")
 start_time = time.time()
 create_databases(database_name)
