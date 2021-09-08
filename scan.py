@@ -101,7 +101,7 @@ def update_trial(db) -> None:
     # this was imputed during curation.
 
     if trial["eot_date"].value and trial["status"].value == "ongoing":
-        trial["status"].value = "Not Ongoing"
+        trial["status"].value = "not ongoing"
 
     # If the meddra level is SOC rather than the expected PT, LLT, etc.,
     # and there is no entry for the meddra SOC, copy the classification
@@ -121,6 +121,8 @@ def update_trial(db) -> None:
     add_trial_stmt = """INSERT INTO trial(
                         {})
                         VALUES({})"""
+
+    trial["title"].value = trial["title"].value.capitalize()
 
     try:
         db.execute(add_trial_stmt
@@ -234,7 +236,7 @@ def add_sponsor_to_set():
     Add a sponsor to the set of sponsor information, even if it duplicates some info.
     :return:
     """
-    sponsor_set.add(tuple([sponsor[x].value for x in sorted(sponsor)]))
+    sponsor_set.add(tuple([sponsor[x].value.title() if x != "email" else sponsor[x].value for x in sorted(sponsor)]))
 
 
 def empty_dict(query_dict: dict) -> bool:
