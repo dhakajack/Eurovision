@@ -13,10 +13,10 @@ import time
 class Element:
 
     def __init__(self, field_type: str, regdef: str):
-        self.field_type = field_type
-        self.regdef = regdef
-        self.regexpdef = re.compile(regdef)
-        self.value = ""
+        self.field_type = field_type                    # database data type e.g. "TEXT NOT NULL"
+        self.regdef = regdef                            # regular expression pattern
+        self.regexpdef = re.compile(regdef)             # regex is compiled at instantiation
+        self.value = ""                                 # holds value read from source file
 
 
 def wipe_dict(target: dict) -> None:
@@ -31,8 +31,7 @@ def wipe_dict(target: dict) -> None:
 
 def wipe_all() -> None:
     """
-    Reinitializes all database fields except for the Eudract number
-    of the current trial.
+    Reinitializes all database fields.
     :return: None.
     """
     wipe_dict(trial)
@@ -87,7 +86,7 @@ def create_databases(filespec: str) -> None:
     db.close()
 
 
-def update_trial(db) -> None:
+def update_trial(db: sqlite3.Connection) -> None:
     """
     Write the core parameters for a given trial (defined by unique
     Eudract number) to database. Uses replacement fields, which may
@@ -95,8 +94,8 @@ def update_trial(db) -> None:
     some SQL into the drug registry itself.
     :return:
     """
-    # Consistency check: Trial status (trial[2] is often not updated in one or more
-    # records for a trial. If any MS entry lists a completion date (trial[43], we do
+    # Consistency check: Trial status is often not updated in one or more
+    # records for a trial. If any MS entry lists a completion date, we do
     # not know how the trial ended, but can be pretty sure that it did end. The status
     # of 'not ongoing' is not a native value for this field to make it obvious that
     # this was imputed during curation.
@@ -113,7 +112,7 @@ def update_trial(db) -> None:
 
     print("Updating trial {}".format(trial["eudract"].value))
 
-    for x in trial:
+    for x in [prop for prop in trial if trial[prop].field_type == "INTEGER NOT NULL"]:
         if trial[x].value == "yes":
             trial[x].value = 1
         elif trial[x].value == "no":
@@ -132,6 +131,7 @@ def update_trial(db) -> None:
     except sqlite3.IntegrityError:
         print("Database integrity error, likely duplicate Eudract number for study {}"
               .format(trial["eudract"].value))
+        # This can happen if the database "wraps" on last page displayed
 
 
 def drug_fields_match(okptr: str, currptr: str) -> bool:
@@ -140,17 +140,17 @@ def drug_fields_match(okptr: str, currptr: str) -> bool:
     duplicates
     :param okptr:
     :param currptr:
-    :return:
+    :return: Whether the fields match.
     """
     if len(okptr) > 0 and okptr == currptr:
         return True
     return False
 
 
-def update_drug(db, list_of_drugs):
+def update_drug(db: sqlite3.Connection, list_of_drugs) -> None:
     """
     Write the drug data for a given trial to the database.
-    :return:
+    :return: None.
     """
     # Sort through drug entries, possibly representing one or several drugs in the trial to
     # eliminate duplicates. When one entry contains information for a given drug not present
@@ -190,15 +190,25 @@ def update_drug(db, list_of_drugs):
     tup_to_db(db, "drug", drug, list_of_drugs)
 
 
-def update_sponsor(db):
+def update_sponsor(db: sqlite3.Connection) -> None:
     """
     Write the sponsor-related data for a given trial to the database.
-    :return:
+    :return: None.
     """
     tup_to_db(db, "sponsor", sponsor, sponsor_set)
 
 
-def tup_to_db(db, tup_name, tup_dict, tups):
+def tup_to_db(db: sqlite3.Connection, tup_name: str, tup_dict: dict, tups) -> None:
+    """
+    Helper function that takes care of database writing for update_sponsor
+    and update_drug.
+    :param db: the database connection
+    :param tup_name: string name of the dictionary
+    :param tup_dict: the dictionary itself
+    :param tups: a tuple from the collection, either the list of drugs or
+    the set of sponsors.
+    :return: None.
+    """
     add_tup_stmt = "INSERT INTO {}({})\nVALUES({})"
     for details in tups:
         temp = list(details)
@@ -209,10 +219,10 @@ def tup_to_db(db, tup_name, tup_dict, tups):
                    tuple(temp))
 
 
-def update_location(db):
+def update_location(db: sqlite3.Connection) -> None:
     """
     Write the location-related data about a trial to the database.
-    :return:
+    :return: None.
     """
     add_location_stmt = "INSERT INTO location(eudract, location)\nVALUES(?,?)"
     for where in sorted(location_set):
@@ -220,10 +230,10 @@ def update_location(db):
                                        where))
 
 
-def add_drug_to_list():
+def add_drug_to_list() -> None:
     """
     Add a drug to the list of drug information, even if it duplicates some information.
-    :return:
+    :return: None. Modifies the drug list.
     """
     # if there is something in any of the fields, add that entry to the drug list
     drug_list.append([drug["trade"].value,
@@ -232,10 +242,10 @@ def add_drug_to_list():
                       ])
 
 
-def add_sponsor_to_set():
+def add_sponsor_to_set() -> None:
     """
     Add a sponsor to the set of sponsor information, even if it duplicates some info.
-    :return:
+    :return: None. Updates the sponsor set.
     """
     sponsor_set.add(tuple([sponsor[x].value.title() if x != "email" else sponsor[x].value for x in sorted(sponsor)]))
 
@@ -252,7 +262,7 @@ def empty_dict(query_dict: dict) -> bool:
     return True
 
 
-def update_databases(filespec):
+def update_databases(filespec: str) -> None:
     """
     Calls subroutines to write data to each table of database.
     :return:
@@ -281,7 +291,7 @@ def table_match(current_line: str, dict_item: dict, dict_item_keys: list) -> boo
     :param current_line: A line from the text listing of trials
     :param dict_item: A dictionary with data elements
     :param dict_item_keys: A subset of dictionary keys to evaluate
-    :return:
+    :return: Whether a match was found
     """
     for key in dict_item_keys:
         # Don't override previously defined data elements except a "yes"
@@ -297,11 +307,6 @@ def table_match(current_line: str, dict_item: dict, dict_item_keys: list) -> boo
                 dict_item[key].value = lm
                 return True
     return False
-
-
-def banner(banchar="*", width=80) -> str:
-    """ Print a line of some character to break up output"""
-    return banchar * width
 
 
 def list_match(current_line: str, test_item: Element) -> str:
@@ -484,9 +489,10 @@ location_set = set()
 screening_list = []
 for dictionary in (trial, drug, sponsor, other):
     for dict_idx in dictionary:
+        # first seven characters of each line after removing the regex start of line anchor
         screening_list.append(dictionary[dict_idx].regdef[:7].strip("^"))
 
-source_file = "test2000x.txt"
+source_file = "20210826-1644.txt"
 database_name = input("Name of database to write? > ")
 start_time = time.time()
 create_databases(database_name)
