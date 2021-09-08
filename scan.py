@@ -100,22 +100,22 @@ def update_trial(db) -> None:
     # of 'not ongoing' is not a native value for this field to make it obvious that
     # this was imputed during curation.
 
-    if trial["eot_date"].value and trial["status"].value.casefold() == "ongoing":
+    if trial["eot_date"].value and trial["status"].value == "ongoing":
         trial["status"].value = "Not Ongoing"
 
     # If the meddra level is SOC rather than the expected PT, LLT, etc.,
     # and there is no entry for the meddra SOC, copy the classification
     # into the SOC field
 
-    if not trial["meddra_soc"].value and trial["meddra_level"].value.casefold() == "soc":
+    if not trial["meddra_soc"].value and trial["meddra_level"].value == "soc":
         trial["meddra_soc"].value = trial["meddra_classification"].value
 
     print("Updating trial {}".format(trial["eudract"].value))
 
     for x in trial:
-        if trial[x].value.casefold() == "yes":   # TODO optimize all this case folding later, maybe just do it once
+        if trial[x].value == "yes":
             trial[x].value = 1
-        elif trial[x].value.casefold() == "no":
+        elif trial[x].value == "no":
             trial[x].value = 0
 
     add_trial_stmt = """INSERT INTO trial(
@@ -223,11 +223,10 @@ def add_drug_to_list():
     :return:
     """
     # if there is something in any of the fields, add that entry to the drug list
-    drug_list.append([drug["trade"].value.casefold(),
-                      drug["product"].value.casefold(),
-                      drug["code"].value.casefold(),
+    drug_list.append([drug["trade"].value,
+                      drug["product"].value,
+                      drug["code"].value,
                       ])
-    # print("Drug list is now {}".format(drug_list))  # TODO remove
 
 
 def add_sponsor_to_set():
@@ -284,9 +283,9 @@ def table_match(current_line: str, dict_item: dict, dict_item_keys: list) -> boo
     for key in dict_item_keys:
         # Don't override previously defined data elements except a "yes"
         # trumps a "no" reply
-        if dict_item[key].value.casefold() == "no":
+        if dict_item[key] == "no":
             lm = list_match(current_line, dict_item[key])
-            if lm.casefold() == "yes":
+            if lm == "yes":
                 dict_item[key].value = "yes"
                 return True
         elif dict_item[key].value == "":
@@ -314,7 +313,7 @@ def list_match(current_line: str, test_item: Element) -> str:
     """
     m = test_item.regexpdef.match(" ".join(current_line.split()))
     if m:
-        return m.group(1)
+        return m.group(1).casefold()
     else:
         return ""
 
