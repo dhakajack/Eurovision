@@ -329,7 +329,7 @@ def list_match(current_line: str, test_item: Element) -> str:
 def parse_listing(infile: str, outfile: str):
     current_trial = ""
     print("Parsing.")
-    with open(infile, "r") as eu_trials:
+    with open(infile, "r", encoding='utf8') as eu_trials:
         line = eu_trials.readline()
         while line:
             if not any(screen_item in line for screen_item in screening_list):
@@ -492,7 +492,8 @@ for dictionary in (trial, drug, sponsor, other):
         # first seven characters of each line after removing the regex start of line anchor
         screening_list.append(dictionary[dict_idx].regdef[:7].strip("^"))
 
-source_file = "20210826-1644.txt"
+# source_file = "20210826-1644.txt"
+source_file = "test2000x.txt"
 database_name = input("Name of database to write? > ")
 start_time = time.time()
 create_databases(database_name)
