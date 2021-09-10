@@ -480,6 +480,8 @@ other = {"imp_re": Element("", r"D.IMP: \d+"),
          "loc_alt_end_re": Element("", "^E.8.7 Trial has a data monitoring committee:")
          }
 
+
+
 # Sets are used for sponsor and location to consolidate repeating data
 drug_list = []
 sponsor_set = set()
@@ -493,7 +495,7 @@ for dictionary in (trial, drug, sponsor, other):
         screening_list.append(dictionary[dict_idx].regdef[:7].strip("^"))
 
 # source_file = "20210826-1644.txt"
-source_file = "test2000x.txt"
+source_file = input("Name of source file to parse? >")
 database_name = input("Name of database to write? > ")
 start_time = time.time()
 create_databases(database_name)
