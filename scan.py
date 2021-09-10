@@ -480,24 +480,23 @@ other = {"imp_re": Element("", r"D.IMP: \d+"),
          "loc_alt_end_re": Element("", "^E.8.7 Trial has a data monitoring committee:")
          }
 
+if __name__ == "__main__":
+    # Sets are used for sponsor and location to consolidate repeating data
+    drug_list = []
+    sponsor_set = set()
+    location_set = set()
 
+    # compile a screening list - when parsing, will skip any line without one of these phrases
+    screening_list = []
+    for dictionary in (trial, drug, sponsor, other):
+        for dict_idx in dictionary:
+            # first seven characters of each line after removing the regex start of line anchor
+            screening_list.append(dictionary[dict_idx].regdef[:7].strip("^"))
 
-# Sets are used for sponsor and location to consolidate repeating data
-drug_list = []
-sponsor_set = set()
-location_set = set()
-
-# compile a screening list - when parsing, will skip any line without one of these phrases
-screening_list = []
-for dictionary in (trial, drug, sponsor, other):
-    for dict_idx in dictionary:
-        # first seven characters of each line after removing the regex start of line anchor
-        screening_list.append(dictionary[dict_idx].regdef[:7].strip("^"))
-
-# source_file = "20210826-1644.txt"
-source_file = input("Name of source file to parse? >")
-database_name = input("Name of database to write? > ")
-start_time = time.time()
-create_databases(database_name)
-parse_listing(source_file, database_name)
-print("Run time: {}".format(time.time() - start_time))
+    # source_file = "20210826-1644.txt"
+    source_file = input("Name of source file to parse? >")
+    database_name = input("Name of database to write? > ")
+    start_time = time.time()
+    create_databases(database_name)
+    parse_listing(source_file, database_name)
+    print("Run time: {}".format(time.time() - start_time))
