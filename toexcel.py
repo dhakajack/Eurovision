@@ -33,7 +33,7 @@ def search_a_table(table: str, the_cursor: sqlite3.Cursor) -> bool:
     return True
 
 
-database = "big11"
+database = "20210826-1644.sqlite3"
 
 result_set = {"trial": set(),
               "imp": set(),
@@ -43,7 +43,53 @@ result_set = {"trial": set(),
 
 final_set = {}
 imp_list = []
-display_trial = ["eudract_id", "official_title", "condition"]  # TO CONSIDER: make this a customizable list
+display_trial = ["eudract_id",
+                 "official_title",
+                 "condition",
+                 "enrollment",
+                 "overall_status",
+                 "phase1",
+                 "phase2",
+                 "phase3",
+                 "phase4",
+                 "meddra_version",
+                 "meddra_level",
+                 "meddra_classification",
+                 "meddra_term",
+                 "meddra_soc",
+                 "nct_id",
+                 "who_utrn_id",
+                 "isrctn_id",
+                 "sponsor_id",
+                 "study_first_submitted_date",
+                 "completion_date",
+                 "therapy",
+                 "diagnosis",
+                 "prophylaxis",
+                 "safety",
+                 "efficacy",
+                 "pk",
+                 "pd",
+                 "randomised",
+                 "placebo",
+                 "open_design",
+                 "single_blind",
+                 "double_blind",
+                 "crossover",
+                 "rare",
+                 "fih",
+                 "bioequivalence",
+                 "age_in_utero",
+                 "age_preterm",
+                 "age_newborn",
+                 "age_under2",
+                 "age_2to11",
+                 "age12to17",
+                 "age18to64",
+                 "age_65plus",
+                 "female",
+                 "male",
+                 "network"]  # TO CONSIDER: make this a customizable list
 trial_terms_string = ", ".join(display_trial)
 imp_terms = ("trade", "product", "code")
 imp_term_string = ", ".join(imp_terms)
