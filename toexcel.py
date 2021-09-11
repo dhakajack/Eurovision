@@ -26,27 +26,27 @@ def search_a_table(table: str, the_cursor: sqlite3.Cursor) -> bool:
             search_term = "1=1"         # the other tables only list a trial if there is data
         else:                           # for that trial
             return False
-    the_cursor.execute("SELECT eudract FROM {} WHERE {}".format(table, search_term))
+    the_cursor.execute("SELECT eudract_id FROM {} WHERE {}".format(table, search_term))
     hits = flatten(the_cursor.fetchall())
     print("The number of hits is: {}".format(len(hits)))
     result_set[table] = set(hits)
     return True
 
 
-database = "big10"
+database = "big11"
 
 result_set = {"trial": set(),
-              "drug": set(),
+              "imp": set(),
               "sponsor": set(),
               "location": set()
               }
 
 final_set = {}
-drug_list = []
-display_trial = ["eudract", "title", "condition"]  # TO CONSIDER: make this a customizable list
+imp_list = []
+display_trial = ["eudract_id", "official_title", "condition"]  # TO CONSIDER: make this a customizable list
 trial_terms_string = ", ".join(display_trial)
-drug_terms = ("trade", "product", "code")
-drug_term_string = ", ".join(drug_terms)
+imp_terms = ("trade", "product", "code")
+imp_term_string = ", ".join(imp_terms)
 
 db = sqlite3.connect(database)
 cursor = db.cursor()
@@ -55,14 +55,14 @@ while True:
 
     # Input search parameters
     search_a_table("trial", cursor)
-    drug_flag = search_a_table("drug", cursor)
+    imp_flag = search_a_table("imp", cursor)
     location_flag = search_a_table("location", cursor)
     sponsor_flag = search_a_table("sponsor", cursor)
 
     # Intersect result sets from search on each table to yield a final set
     final_set = result_set["trial"]
-    if drug_flag:                            # only bother intersecting with drug table result if a search parameter
-        final_set &= result_set["drug"]      # was provided; i.e., do not narrow the search if not drug parameter.
+    if imp_flag:                            # only bother intersecting with imp table result if a search parameter
+        final_set &= result_set["imp"]      # was provided; i.e., do not narrow the search if not imp parameter.
     if location_flag:
         final_set &= result_set["location"]  # same for location and sponsor.
     if sponsor_flag:
@@ -81,35 +81,35 @@ while True:
         ws = wb.active
         ws.title = "Test Record"  # Later, make this more interesting. Consider adding search terms to another tab.
         headers = display_trial[::]
-        headers.extend(("drug", "location", "sponsor"))
+        headers.extend(("imp", "location", "sponsor"))
         ws.append(headers)
 
         for trial_selected in sorted(final_set):
-            cursor.execute("SELECT {} FROM trial WHERE eudract = \"{}\"".
+            cursor.execute("SELECT {} FROM trial WHERE eudract_id = \"{}\"".
                            format(trial_terms_string, trial_selected))
             extract = cursor.fetchone()
             trial_data = list(extract)
-            cursor.execute("SELECT {} FROM drug WHERE eudract = \"{}\""
-                           .format(drug_term_string, trial_selected))
+            cursor.execute("SELECT {} FROM imp WHERE eudract_id = \"{}\""
+                           .format(imp_term_string, trial_selected))
             rows = cursor.fetchall()
-            drug_list.clear()
-            for drug_data in rows:
-                if drug_data[1]:            # prefer product name
-                    drug_name_source = 1
-                elif drug_data[0]:          # product trade name
-                    drug_name_source = 0
+            imp_list.clear()
+            for imp_data in rows:
+                if imp_data[1]:            # prefer product name
+                    imp_name_source = 1
+                elif imp_data[0]:          # product trade name
+                    imp_name_source = 0
                 else:
-                    drug_name_source = 2    # product code
-                drug_list.append(drug_terms[drug_name_source] + ":" + drug_data[drug_name_source])
-            drug_entry = "; ".join(drug_list)
-            cursor.execute("SELECT location FROM location WHERE eudract = \"{}\""
+                    imp_name_source = 2    # product code
+                imp_list.append(imp_terms[imp_name_source] + ":" + imp_data[imp_name_source])
+            imp_entry = "; ".join(imp_list)
+            cursor.execute("SELECT location FROM location WHERE eudract_id = \"{}\""
                            .format(trial_selected))
             rows = cursor.fetchall()
             location_entry = ", ".join(flatten(rows))
-            cursor.execute("SELECT name FROM sponsor WHERE eudract = \"{}\""
+            cursor.execute("SELECT name FROM sponsor WHERE eudract_id = \"{}\""
                            .format(trial_selected))
             sponsor_entry = cursor.fetchone()[0]
-            trial_data.append(drug_entry)
+            trial_data.append(imp_entry)
             trial_data.append(location_entry)
             trial_data.append(sponsor_entry)
             ws.append(trial_data)
