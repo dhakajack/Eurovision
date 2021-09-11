@@ -35,10 +35,10 @@ def wipe_all() -> None:
     :return: None.
     """
     wipe_dict(trial)
-    wipe_dict(drug)
+    wipe_dict(imp)
     wipe_dict(sponsor)
     # clear the lists that are built per-trial
-    drug_list.clear()
+    imp_list.clear()
     sponsor_set.clear()
     location_set.clear()
 
@@ -53,35 +53,35 @@ def create_databases(filespec: str) -> None:
     with sqlite3.connect(filespec) as db:
         db_trial_def = "CREATE TABLE trial(\n{}\n)"
 
-        db_drug_def = "CREATE TABLE drug(\n" \
-                      "eudract TEXT NOT NULL," \
-                      "\n{}\n" \
-                      ")"
+        db_imp_def = "CREATE TABLE imp(\n" \
+                     "eudract_id TEXT NOT NULL," \
+                     "\n{}\n" \
+                     ")"
 
         db_sponsor_def = "CREATE TABLE sponsor(\n" \
-                         "eudract TEXT NOT NULL," \
+                         "eudract_id TEXT NOT NULL," \
                          "\n{}\n" \
                          ")"
 
         db_location_def = "CREATE TABLE location(\n" \
-                          "eudract TEXT NOT NULL,\n" \
+                          "eudract_id TEXT NOT NULL,\n" \
                           "location TEXT NOT NULL\n" \
                           ")"
 
-        db_location_index = "CREATE INDEX idx_location on location (eudract)"
-        db_sponsor_index = "CREATE INDEX idx_drug on drug (eudract)"
-        db_drug_index = "CREATE INDEX idx_sponsor on sponsor (eudract)"
+        db_location_index = "CREATE INDEX idx_location on location (eudract_id)"
+        db_sponsor_index = "CREATE INDEX idx_imp on imp (eudract_id)"
+        db_imp_index = "CREATE INDEX idx_sponsor on sponsor (eudract_id)"
 
         db.execute(db_trial_def
                    .format(", \n".join(["{} {}".format(x, trial[x].field_type) for x in sorted(trial)])))
-        db.execute(db_drug_def
-                   .format(", \n".join(["{} {}".format(x, drug[x].field_type) for x in sorted(drug)])))
+        db.execute(db_imp_def
+                   .format(", \n".join(["{} {}".format(x, imp[x].field_type) for x in sorted(imp)])))
         db.execute(db_sponsor_def
                    .format(", \n".join(["{} {}" .format(x, sponsor[x].field_type) for x in sorted(sponsor)])))
         db.execute(db_location_def)
         db.execute(db_location_index)
         db.execute(db_sponsor_index)
-        db.execute(db_drug_index)
+        db.execute(db_imp_index)
         print("databases created!")
     db.close()
 
@@ -91,7 +91,7 @@ def update_trial(db: sqlite3.Connection) -> None:
     Write the core parameters for a given trial (defined by unique
     Eudract number) to database. Uses replacement fields, which may
     be overkill, but just in case anyone actually managed to stick
-    some SQL into the drug registry itself.
+    some SQL into the trial registry itself.
     :return:
     """
     # Consistency check: Trial status is often not updated in one or more
@@ -100,8 +100,8 @@ def update_trial(db: sqlite3.Connection) -> None:
     # of 'not ongoing' is not a native value for this field to make it obvious that
     # this was imputed during curation.
 
-    if trial["eot_date"].value and trial["status"].value == "ongoing":
-        trial["status"].value = "not ongoing"
+    if trial["completion_date"].value and trial["overall_status"].value == "ongoing":
+        trial["overall_status"].value = "not ongoing"
 
     # If the meddra level is SOC rather than the expected PT, LLT, etc.,
     # and there is no entry for the meddra SOC, copy the classification
@@ -110,7 +110,7 @@ def update_trial(db: sqlite3.Connection) -> None:
     if not trial["meddra_soc"].value and trial["meddra_level"].value == "soc":
         trial["meddra_soc"].value = trial["meddra_classification"].value
 
-    print("Updating trial {}".format(trial["eudract"].value))
+    print("Updating trial {}".format(trial["eudract_id"].value))
 
     for x in [prop for prop in trial if trial[prop].field_type == "INTEGER NOT NULL"]:
         if trial[x].value == "yes":
@@ -128,13 +128,13 @@ def update_trial(db: sqlite3.Connection) -> None:
                    [trial[x].value for x in sorted(trial)])
     except sqlite3.IntegrityError:
         print("Database integrity error, likely duplicate Eudract number for study {}"
-              .format(trial["eudract"].value))
+              .format(trial["eudract_id"].value))
         # This can happen if the database "wraps" on last page displayed
 
 
-def drug_fields_match(okptr: str, currptr: str) -> bool:
+def imp_fields_match(okptr: str, currptr: str) -> bool:
     """
-    A helper function for update_drug. Determines if drug fields match for the purpose of consolidating
+    A helper function for update_imp. Determines if IMP fields match for the purpose of consolidating
     duplicates
     :param okptr:
     :param currptr:
@@ -145,47 +145,47 @@ def drug_fields_match(okptr: str, currptr: str) -> bool:
     return False
 
 
-def update_drug(db: sqlite3.Connection, list_of_drugs) -> None:
+def update_imp(db: sqlite3.Connection, list_of_imps) -> None:
     """
-    Write the drug data for a given trial to the database.
+    Write the IMP data for a given trial to the database.
     :return: None.
     """
-    # Sort through drug entries, possibly representing one or several drugs in the trial to
-    # eliminate duplicates. When one entry contains information for a given drug not present
-    # in other entries, harvest that information so the final list for each drug combines
-    # all information available for that drug.
-    top_ptr = len(list_of_drugs)
+    # Sort through IMP entries, possibly representing one or several IMPs in the trial to
+    # eliminate duplicates. When one entry contains information for a given IMP not present
+    # in other entries, harvest that information so the final list for each IMP combines
+    # all information available for that IMP.
+    top_ptr = len(list_of_imps)
     if top_ptr > 1:
         ok_ptr = 0
         while ok_ptr != top_ptr:
             current_ptr = ok_ptr + 1
             while current_ptr != top_ptr:
-                # does any drug field match? If so, combine
-                if drug_fields_match(list_of_drugs[ok_ptr][0], list_of_drugs[current_ptr][0]) \
-                  or drug_fields_match(list_of_drugs[ok_ptr][1], list_of_drugs[current_ptr][1]) \
-                  or drug_fields_match(list_of_drugs[ok_ptr][2], list_of_drugs[current_ptr][2]):
+                # does any IMP field match? If so, combine
+                if imp_fields_match(list_of_imps[ok_ptr][0], list_of_imps[current_ptr][0]) \
+                  or imp_fields_match(list_of_imps[ok_ptr][1], list_of_imps[current_ptr][1]) \
+                  or imp_fields_match(list_of_imps[ok_ptr][2], list_of_imps[current_ptr][2]):
 
                     # Take the shorter of the Trade names:
-                    if len(list_of_drugs[ok_ptr][0]) > len(list_of_drugs[current_ptr][0]) > 0:
-                        list_of_drugs[ok_ptr][0] = list_of_drugs[current_ptr][0]
+                    if len(list_of_imps[ok_ptr][0]) > len(list_of_imps[current_ptr][0]) > 0:
+                        list_of_imps[ok_ptr][0] = list_of_imps[current_ptr][0]
 
                     # Take the shorter of the Product names:
-                    if len(list_of_drugs[ok_ptr][1]) > len(list_of_drugs[current_ptr][1]) > 0:
-                        list_of_drugs[ok_ptr][1] = list_of_drugs[current_ptr][1]
+                    if len(list_of_imps[ok_ptr][1]) > len(list_of_imps[current_ptr][1]) > 0:
+                        list_of_imps[ok_ptr][1] = list_of_imps[current_ptr][1]
 
                     # If only one entry has a value for a given field, use it.
-                    for i in range(0, len(list_of_drugs[ok_ptr])):
-                        if list_of_drugs[ok_ptr][i] == "":
-                            list_of_drugs[ok_ptr][i] = list_of_drugs[current_ptr][i]
+                    for i in range(0, len(list_of_imps[ok_ptr])):
+                        if list_of_imps[ok_ptr][i] == "":
+                            list_of_imps[ok_ptr][i] = list_of_imps[current_ptr][i]
 
-                    list_of_drugs[current_ptr] = list_of_drugs[top_ptr - 1]
+                    list_of_imps[current_ptr] = list_of_imps[top_ptr - 1]
                     top_ptr -= 1
                 else:
                     current_ptr += 1
             ok_ptr += 1
-    # Slice the list down to just the unique drug entries and write to database
-    list_of_drugs = list_of_drugs[:top_ptr]
-    tup_to_db(db, "drug", drug, list_of_drugs)
+    # Slice the list down to just the unique IMP entries and write to database
+    list_of_imps = list_of_imps[:top_ptr]
+    tup_to_db(db, "imp", imp, list_of_imps)
 
 
 def update_sponsor(db: sqlite3.Connection) -> None:
@@ -199,20 +199,20 @@ def update_sponsor(db: sqlite3.Connection) -> None:
 def tup_to_db(db: sqlite3.Connection, tup_name: str, tup_dict: dict, tups) -> None:
     """
     Helper function that takes care of database writing for update_sponsor
-    and update_drug.
+    and update_imp.
     :param db: the database connection
     :param tup_name: string name of the dictionary
     :param tup_dict: the dictionary itself
-    :param tups: a tuple from the collection, either the list of drugs or
+    :param tups: a tuple from the collection, either the list of IMPs or
     the set of sponsors.
     :return: None.
     """
     add_tup_stmt = "INSERT INTO {}({})\nVALUES({})"
     for details in tups:
         temp = list(details)
-        temp.insert(0, trial["eudract"].value)
+        temp.insert(0, trial["eudract_id"].value)
         db.execute(add_tup_stmt.format(tup_name,
-                                       "\neudract,\n" + ",\n".join(sorted(tup_dict)),
+                                       "\neudract_id,\n" + ",\n".join(sorted(tup_dict)),
                                        ",".join("?" * (len(tup_dict) + 1))),
                    tuple(temp))
 
@@ -222,22 +222,22 @@ def update_location(db: sqlite3.Connection) -> None:
     Write the location-related data about a trial to the database.
     :return: None.
     """
-    add_location_stmt = "INSERT INTO location(eudract, location)\nVALUES(?,?)"
+    add_location_stmt = "INSERT INTO location(eudract_id, location)\nVALUES(?,?)"
     for where in sorted(location_set):
-        db.execute(add_location_stmt, (trial["eudract"].value,
+        db.execute(add_location_stmt, (trial["eudract_id"].value,
                                        where))
 
 
-def add_drug_to_list() -> None:
+def add_imp_to_list() -> None:
     """
-    Add a drug to the list of drug information, even if it duplicates some information.
-    :return: None. Modifies the drug list.
+    Add an IMP to the list of IMP information, even if it duplicates some information.
+    :return: None. Modifies the IMP list.
     """
-    # if there is something in any of the fields, add that entry to the drug list
-    drug_list.append([drug["trade"].value,
-                      drug["product"].value,
-                      drug["code"].value,
-                      ])
+    # if there is something in any of the fields, add that entry to the IMP list
+    imp_list.append([imp["trade"].value,
+                     imp["product"].value,
+                     imp["code"].value,
+                     ])
 
 
 def add_sponsor_to_set() -> None:
@@ -250,8 +250,8 @@ def add_sponsor_to_set() -> None:
 
 def empty_dict(query_dict: dict) -> bool:
     """
-    Determine if a dict (e.g., drug) has no data. Sometimes trials have no drug at all listed,
-    in other cases, the IMP section may have an entry without an drug-identifing information.
+    Determine if a dict (e.g., IMP) has no data. Sometimes trials have no IMP at all listed,
+    in other cases, the IMP section may have an entry without an IMP-identifing information.
     :return: True if any of the dictionary elements are defined.
     """
     for item in query_dict:
@@ -267,12 +267,12 @@ def update_databases(filespec: str) -> None:
     """
     # Add uncommitted items to their respective lists
     with sqlite3.connect(filespec) as conn:
-        if not empty_dict(drug):
-            add_drug_to_list()
+        if not empty_dict(imp):
+            add_imp_to_list()
         add_sponsor_to_set()
         # Update each database table
         update_trial(conn)
-        update_drug(conn, drug_list)
+        update_imp(conn, imp_list)
         update_sponsor(conn)
         update_location(conn)
     conn.close()
@@ -319,7 +319,7 @@ def list_match(current_line: str, test_item: Element) -> str:
     """
     m = test_item.regexpdef.match(" ".join(current_line.split()))
     if m:
-        if test_item.regexpdef == trial["title"].regexpdef:
+        if test_item.regexpdef == trial["official_title"].regexpdef:
             return m.group(1)  # i.e., don't casefold the study title.
         else:
             return m.group(1).casefold()
@@ -338,23 +338,23 @@ def parse_listing(infile: str, outfile: str):
                 continue
             # For each line, try to match all elements to be captured.
             # Begin with the Eudract number, which signals start of a new trial listing
-            tested_term = list_match(line, trial["eudract"])  # Trial Eudract number
+            tested_term = list_match(line, trial["eudract_id"])  # Trial Eudract number
             if tested_term:
                 # Is this a new trial, or a listing of same trial for different EU member state?
                 if current_trial != tested_term:
-                    if trial["eudract"].value != "":
+                    if trial["eudract_id"].value != "":
                         # write to database tables
                         update_databases(outfile)
                     # Capture the new Eudract number for next trial
                     wipe_all()
-                    trial["eudract"].value = current_trial = tested_term
+                    trial["eudract_id"].value = current_trial = tested_term
                 line = eu_trials.readline()
                 continue
             tested_term = other["imp_re"].regexpdef.match(" ".join(line.split()))
             if tested_term:
-                if not empty_dict(drug):
-                    add_drug_to_list()
-                    wipe_dict(drug)
+                if not empty_dict(imp):
+                    add_imp_to_list()
+                    wipe_dict(imp)
                 line = eu_trials.readline()
                 continue
             tested_term = list_match(line, sponsor["name"])  # sponsor
@@ -396,8 +396,8 @@ def parse_listing(infile: str, outfile: str):
                 line = eu_trials.readline()
                 continue
             # Finally, fill these tables
-            if table_match(line, trial, [x for x in trial if x != "eudract"]) \
-                    or table_match(line, drug, [x for x in drug]) \
+            if table_match(line, trial, [x for x in trial if x != "eudract_id"]) \
+                    or table_match(line, imp, [x for x in imp]) \
                     or table_match(line, sponsor, [x for x in sponsor if x != "name"]):
                 line = eu_trials.readline()
                 continue
@@ -408,18 +408,18 @@ def parse_listing(infile: str, outfile: str):
 
 
 # Trial dictionary definitions
-trial = {"eudract": Element("TEXT NOT NULL PRIMARY KEY", r"^EudraCT Number:\s*(\S+)"),
-         "sponsor_code": Element("TEXT NOT NULL", "^Sponsor's Protocol Code Number: (.*$)"),
-         "status": Element("TEXT NOT NULL", "^Trial Status: (.*$)"),
-         "db_date": Element("TEXT NOT NULL",
-                            "^Date on which this record was first entered in the EudraCT database: (.*$)"),
-         "title": Element("TEXT NOT NULL", "^A.3 Full title of the trial: (.*$)"),
-         "sponsor_protocol": Element("TEXT NOT NULL", "^A.4.1 Sponsor's protocol code number: (.*$)"),
-         "isrctn": Element("TEXT NOT NULL",
-                           r"^A.5.1 ISRCTN \(International Standard Randomised Controlled Trial\) number: (.*$)"),
-         "who_utrn": Element("TEXT NOT NULL",
-                             r"^A.5.3 WHO Universal Trial Reference Number \(UTRN\): (.*$)"),
-         "nct": Element("TEXT NOT NULL", r"^A.5.2 US NCT \(ClinicalTrials.gov registry\) number: (NCT\d+)"),
+trial = {"eudract_id": Element("TEXT NOT NULL PRIMARY KEY", r"^EudraCT Number:\s*(\S+)"),
+         "overall_status": Element("TEXT NOT NULL", "^Trial Status: (.*$)"),
+         "study_first_submitted_date": Element("TEXT NOT NULL",
+                                               "^Date on which this record was first "
+                                               "entered in the EudraCT database: (.*$)"),
+         "official_title": Element("TEXT NOT NULL", "^A.3 Full title of the trial: (.*$)"),
+         "sponsor_id": Element("TEXT NOT NULL", "^A.4.1 Sponsor's protocol code number: (.*$)"),
+         "isrctn_id": Element("TEXT NOT NULL",
+                              r"^A.5.1 ISRCTN \(International Standard Randomised Controlled Trial\) number: (.*$)"),
+         "who_utrn_id": Element("TEXT NOT NULL",
+                                r"^A.5.3 WHO Universal Trial Reference Number \(UTRN\): (.*$)"),
+         "nct_id": Element("TEXT NOT NULL", r"^A.5.2 US NCT \(ClinicalTrials.gov registry\) number: (NCT\d+)"),
          "placebo": Element("INTEGER NOT NULL", r"D.8.1 Is a Placebo used in this Trial\? (.*$)"),
          "condition": Element("TEXT NOT NULL", r"^E.1.1 Medical condition\(s\) being investigated: (.*$)"),
          "meddra_version": Element("TEXT NOT NULL", "^E.1.2 Version: ([0-9.]+)"),
@@ -457,14 +457,14 @@ trial = {"eudract": Element("TEXT NOT NULL PRIMARY KEY", r"^EudraCT Number:\s*(\
          "age_65plus": Element("INTEGER NOT NULL", r"^F.1.3 Elderly \(>=65 years\): (.*$)"),
          "female": Element("INTEGER NOT NULL", "^F.2.1 Female: (.*$)"),
          "male": Element("INTEGER NOT NULL", "^F.2.2 Male: (.*$)"),
-         "n": Element("TEXT NOT NULL", "^F.4.2.2 In the whole clinical trial: (.*$)"),
+         "enrollment": Element("TEXT NOT NULL", "^F.4.2.2 In the whole clinical trial: (.*$)"),
          "network": Element("TEXT NOT NULL", "^G.4.1 Name of Organisation: (.*$)"),
-         "eot_date": Element("TEXT NOT NULL", "^P. Date of the global end of the trial: (.*$)")}
+         "completion_date": Element("TEXT NOT NULL", "^P. Date of the global end of the trial: (.*$)")}
 
-# Drug table definitions
-drug = {"trade": Element("TEXT NOT NULL", "^D.2.1.1.1 Trade name: (.*$)"),
-        "product": Element("TEXT NOT NULL", "^D.3.1 Product name: (.*$)"),
-        "code": Element("TEXT NOT NULL", "^D.3.2 Product code: (.*$)")}
+# IMP table definitions
+imp = {"trade": Element("TEXT NOT NULL", "^D.2.1.1.1 Trade name: (.*$)"),
+       "product": Element("TEXT NOT NULL", "^D.3.1 Product name: (.*$)"),
+       "code": Element("TEXT NOT NULL", "^D.3.2 Product code: (.*$)")}
 
 # Sponsor table definitions
 sponsor = {"name": Element("TEXT NOT NULL", "^B.1.1 Name of Sponsor: (.*$)"),
@@ -483,13 +483,13 @@ other = {"imp_re": Element("", r"D.IMP: \d+"),
 
 if __name__ == "__main__":
     # Sets are used for sponsor and location to consolidate repeating data
-    drug_list = []
+    imp_list = []
     sponsor_set = set()
     location_set = set()
 
     # compile a screening list - when parsing, will skip any line without one of these phrases
     screening_list = []
-    for dictionary in (trial, drug, sponsor, other):
+    for dictionary in (trial, imp, sponsor, other):
         for dict_idx in dictionary:
             # first seven characters of each line after removing the regex start of line anchor
             screening_list.append(dictionary[dict_idx].regdef[:7].strip("^"))
