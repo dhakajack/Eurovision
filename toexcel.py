@@ -33,7 +33,7 @@ def search_a_table(table: str, the_cursor: sqlite3.Cursor) -> bool:
     return True
 
 
-database = "big7"
+database = "big10"
 
 result_set = {"trial": set(),
               "drug": set(),
