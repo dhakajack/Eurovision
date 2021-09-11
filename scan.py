@@ -122,8 +122,6 @@ def update_trial(db: sqlite3.Connection) -> None:
                         {})
                         VALUES({})"""
 
-    trial["title"].value = trial["title"].value.capitalize()
-
     try:
         db.execute(add_trial_stmt
                    .format(", \n".join(sorted(trial)), ",".join("?" * len(trial))),
@@ -321,7 +319,10 @@ def list_match(current_line: str, test_item: Element) -> str:
     """
     m = test_item.regexpdef.match(" ".join(current_line.split()))
     if m:
-        return m.group(1).casefold()
+        if test_item.regexpdef == trial["title"].regexpdef:
+            return m.group(1)  # i.e., don't casefold the study title.
+        else:
+            return m.group(1).casefold()
     else:
         return ""
 
